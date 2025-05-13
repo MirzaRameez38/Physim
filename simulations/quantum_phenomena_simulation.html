@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum vs Classical Physics Interactive Simulation</title>
+    <!-- Include Three.js for 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Include OrbitControls for camera manipulation -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            color: #333;
+            background-color: #f0f5ff;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            background-color: #1a237e;
+            color: white;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        h1, h2, h3, h4 {
+            color: #1a237e;
+        }
+        
+        .tab-container {
+            margin: 20px 0;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background-color: #c5cae9;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .tab.active {
+            background-color: #3949ab;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .simulation-container {
+            width: 100%;
+            height: 400px;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #e8eaf6;
+            border-radius: 5px;
+        }
+        
+        .control-group {
+            margin: 10px 0;
+        }
+        
+        label {
+            display: inline-block;
+            width: 150px;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+            vertical-align: middle;
+        }
+        
+        .value-display {
+            display: inline-block;
+            width: 50px;
+            text-align: center;
+        }
+        
+        .info-box {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .application-card {
+            background-color: white;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .learning-outcome {
+            background-color: #e8f5e9;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+            background-color: #1a237e;
+            color: white;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+    
+        
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>Welcome to this interactive exploration of classical and quantum physics! This simulation allows you to visualize and interact with key concepts from both domains, helping to bridge the gap between our everyday experience (classical physics) and the strange behavior of the quantum world.</p>
+            <div class="info-box">
+                <h3>What's the difference?</h3>
+                <p><strong>Classical Physics</strong> describes the macroscopic world we experience daily, where objects have definite positions and velocities, and their behavior is deterministic and predictable.</p>
+                <p><strong>Quantum Physics</strong> governs the microscopic realm of atoms and subatomic particles, where objects exhibit wave-particle duality, outcomes are probabilistic, and phenomena like superposition and entanglement challenge our intuition.</p>
+            </div>
+        </section>
+
+        <div class="tab-container">
+            <div class="tabs">
+                <button class="tab active" onclick="openTab('classical')">Classical Physics</button>
+                <button class="tab" onclick="openTab('quantum')">Quantum Physics</button>
+                <button class="tab" onclick="openTab('comparison')">Side-by-Side Comparison</button>
+            </div>
+            
+            <!-- Classical Physics Tab -->
+            <div id="classical" class="tab-content active">
+                <h2>Classical Physics Simulation</h2>
+                <p>This simulation demonstrates key principles of classical mechanics, including Newton's laws of motion, conservation of energy, and predictable trajectories.</p>
+                
+                <div class="simulation-container" id="classical-simulation"></div>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="mass">Mass (kg):</label>
+                        <input type="range" id="mass" min="1" max="10" value="5" step="1" oninput="updateClassicalSimulation()">
+                        <span id="mass-value" class="value-display">5</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="velocity">Initial velocity:</label>
+                        <input type="range" id="velocity" min="1" max="10" value="5" step="1" oninput="updateClassicalSimulation()">
+                        <span id="velocity-value" class="value-display">5</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="gravity">Gravity:</label>
+                        <input type="range" id="gravity" min="0" max="20" value="9.8" step="0.1" oninput="updateClassicalSimulation()">
+                        <span id="gravity-value" class="value-display">9.8</span>
+                    </div>
+                    <button onclick="resetClassicalSimulation()">Reset Simulation</button>
+                </div>
+                
+                <h3>Key Concepts in Classical Physics</h3>
+                <ul>
+                    <li><strong>Determinism:</strong> Given initial conditions, future states can be precisely predicted</li>
+                    <li><strong>Continuity:</strong> Objects move along continuous, well-defined trajectories</li>
+                    <li><strong>Locality:</strong> Objects are only affected by their immediate surroundings</li>
+                    <li><strong>Objectivity:</strong> Objects have definite properties independent of observation</li>
+                </ul>
+                
+                <h3>Learning Outcomes</h3>
+                <div class="learning-outcome">
+                    <p>After interacting with this simulation, you should understand:</p>
+                    <ul>
+                        <li>How objects follow predictable paths according to Newton's laws</li>
+                        <li>The conservation of energy in classical systems</li>
+                        <li>How changing parameters affects the motion of objects</li>
+                        <li>The deterministic nature of classical physics</li>
+                    </ul>
+                </div>
+                
+                <h3>Real-Life Applications</h3>
+                <div class="application-card">
+                    <h4>Engineering</h4>
+                    <p>Classical physics principles are fundamental to designing buildings, bridges, vehicles, and machinery. Engineers use Newton's laws to calculate forces, stresses, and dynamics.</p>
+                </div>
+                <div class="application-card">
+                    <h4>Everyday Motion</h4>
+                    <p>From driving a car to playing sports, classical physics explains the motion of objects in our daily lives, allowing us to predict trajectories and interactions.</p>
+                </div>
+                <div class="application-card">
+                    <h4>Astronomy</h4>
+                    <p>The motion of planets, moons, and spacecraft can be predicted with remarkable accuracy using classical mechanics and gravitational principles.</p>
+                </div>
+            </div>
+            
+            <!-- Quantum Physics Tab -->
+            <div id="quantum" class="tab-content">
+                <h2>Quantum Physics Simulation</h2>
+                <p>This simulation illustrates fundamental quantum phenomena including wave-particle duality, quantum tunneling, superposition, and probabilistic behavior.</p>
+                
+                <div class="simulation-container" id="quantum-simulation"></div>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="potential">Potential barrier:</label>
+                        <input type="range" id="potential" min="0" max="10" value="5" step="0.5" oninput="updateQuantumSimulation()">
+                        <span id="potential-value" class="value-display">5</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="energy">Particle energy:</label>
+                        <input type="range" id="energy" min="1" max="10" value="3" step="0.5" oninput="updateQuantumSimulation()">
+                        <span id="energy-value" class="value-display">3</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="wavelength">Wavelength:</label>
+                        <input type="range" id="wavelength" min="0.5" max="5" value="2" step="0.1" oninput="updateQuantumSimulation()">
+                        <span id="wavelength-value" class="value-display">2</span>
+                    </div>
+                    <button onclick="toggleObservation()">Observe Particle</button>
+                    <button onclick="resetQuantumSimulation()">Reset Simulation</button>
+                </div>
+                
+                <h3>Key Concepts in Quantum Physics</h3>
+                <ul>
+                    <li><strong>Wave-Particle Duality:</strong> Quantum objects exhibit properties of both waves and particles</li>
+                    <li><strong>Probabilistic Nature:</strong> We can only predict the probability of finding a particle at a certain position</li>
+                    <li><strong>Superposition:</strong> Quantum systems can exist in multiple states simultaneously</li>
+                    <li><strong>Quantum Tunneling:</strong> Particles can penetrate energy barriers that would be impassable in classical physics</li>
+                    <li><strong>Measurement Effects:</strong> The act of measurement affects the quantum system</li>
+                </ul>
+                
+                <h3>Learning Outcomes</h3>
+                <div class="learning-outcome">
+                    <p>After interacting with this simulation, you should understand:</p>
+                    <ul>
+                        <li>The probabilistic nature of quantum mechanics</li>
+                        <li>How quantum tunneling allows particles to pass through barriers</li>
+                        <li>The concept of wave functions and probability distributions</li>
+                        <li>How measurement collapses superposition states</li>
+                        <li>The fundamental differences between quantum and classical descriptions of reality</li>
+                    </ul>
+                </div>
+                
+                <h3>Real-Life Applications</h3>
+                <div class="application-card">
+                    <h4>Quantum Computing</h4>
+                    <p>Harnessing quantum superposition and entanglement allows quantum computers to solve certain problems exponentially faster than classical computers.</p>
+                </div>
+                <div class="application-card">
+                    <h4>Electronics</h4>
+                    <p>Modern semiconductor devices, including transistors in your smartphone and computer, rely on quantum tunneling and other quantum effects.</p>
+                </div>
+                <div class="application-card">
+                    <h4>Medical Imaging</h4>
+                    <p>MRI machines utilize quantum properties of atomic nuclei to create detailed images of the body's internal structures.</p>
+                </div>
+                <div class="application-card">
+                    <h4>Quantum Cryptography</h4>
+                    <p>Secure communication protocols use quantum properties to detect eavesdropping, providing theoretically unhackable encryption.</p>
+                </div>
+            </div>
+            
+            <!-- Comparison Tab -->
+            <div id="comparison" class="tab-content">
+                <h2>Side-by-Side Comparison</h2>
+                <p>This visualization directly compares classical and quantum behaviors for the same physical scenario, highlighting the fundamental differences between these two frameworks.</p>
+                
+                <div class="simulation-container" id="comparison-simulation"></div>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="barrier-height">Barrier height:</label>
+                        <input type="range" id="barrier-height" min="0" max="10" value="5" step="0.5" oninput="updateComparisonSimulation()">
+                        <span id="barrier-height-value" class="value-display">5</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="particle-energy">Particle energy:</label>
+                        <input type="range" id="particle-energy" min="1" max="10" value="3" step="0.5" oninput="updateComparisonSimulation()">
+                        <span id="particle-energy-value" class="value-display">3</span>
+                    </div>
+                    <button onclick="toggleSimulationSpeed()">Toggle Speed</button>
+                    <button onclick="resetComparisonSimulation()">Reset Simulation</button>
+                </div>
+                
+                <h3>Key Differences Illustrated</h3>
+                <table border="1" style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                    <tr>
+                        <th style="width: 30%; padding: 10px; background-color: #e8eaf6;">Aspect</th>
+                        <th style="padding: 10px; background-color: #e8eaf6;">Classical Physics</th>
+                        <th style="padding: 10px; background-color: #e8eaf6;">Quantum Physics</th>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; font-weight: bold;">Particle Behavior</td>
+                        <td style="padding: 10px;">Particles follow definite trajectories with definite positions and velocities at all times</td>
+                        <td style="padding: 10px;">Particles are described by wave functions representing probability distributions; they don't have definite positions until measured</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; font-weight: bold;">Barrier Interaction</td>
+                        <td style="padding: 10px;">A particle cannot pass through a barrier if its energy is less than the barrier's potential energy</td>
+                        <td style="padding: 10px;">A particle has a non-zero probability of tunneling through a barrier, even with less energy than the barrier height</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; font-weight: bold;">Predictability</td>
+                        <td style="padding: 10px;">Deterministic: future state can be precisely predicted from initial conditions</td>
+                        <td style="padding: 10px;">Probabilistic: only probabilities of different outcomes can be calculated</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; font-weight: bold;">Measurement</td>
+                        <td style="padding: 10px;">Measurement does not affect the system being measured (in principle)</td>
+                        <td style="padding: 10px;">Measurement collapses the wave function, fundamentally affecting the system</td>
+                    </tr>
+                </table>
+                
+                <h3>Understanding the Scale Difference</h3>
+                <div class="info-box">
+                    <p>Classical physics accurately describes the macroscopic world because quantum effects become negligible at large scales. The principle of correspondence explains that quantum mechanics reduces to classical mechanics when dealing with large objects or high quantum numbers.</p>
+                    <p>In our everyday world, objects are composed of countless particles, and their collective quantum behaviors average out to produce the classical behaviors we observe. This is why we don't notice quantum effects in our daily lives, despite living in a fundamentally quantum world.</p>
+                </div>
+            </div>
+        </div>
+        
+      
+    </div>
+
+    <script>
+        // Tab functionality
+        function openTab(tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            event.currentTarget.classList.add("active");
+            
+            // Reinitialize the simulation in the activated tab
+            if (tabName === "classical") {
+                initClassicalSimulation();
+            } else if (tabName === "quantum") {
+                initQuantumSimulation();
+            } else if (tabName === "comparison") {
+                initComparisonSimulation();
+            }
+        }
+        
+        // Classical Physics Simulation
+        let classicalScene, classicalCamera, classicalRenderer, classicalSphere, classicalControls;
+        let classicalAnimationId;
+        
+        function initClassicalSimulation() {
+            if (classicalScene) return; // Prevent multiple initializations
+            
+            // Create scene
+            classicalScene = new THREE.Scene();
+            classicalScene.background = new THREE.Color(0xf0f5ff);
+            
+            // Create camera
+            classicalCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            classicalCamera.position.z = 5;
+            
+            // Create renderer
+            classicalRenderer = new THREE.WebGLRenderer({ antialias: true });
+            classicalRenderer.setSize(
+                document.getElementById('classical-simulation').clientWidth,
+                document.getElementById('classical-simulation').clientHeight
+            );
+            document.getElementById('classical-simulation').innerHTML = '';
+            document.getElementById('classical-simulation').appendChild(classicalRenderer.domElement);
+            
+            // Add controls
+            classicalControls = new THREE.OrbitControls(classicalCamera, classicalRenderer.domElement);
+            classicalControls.enableDamping = true;
+            classicalControls.dampingFactor = 0.05;
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            classicalScene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            classicalScene.add(directionalLight);
+            
+            // Create a sphere (representing a classical particle)
+            const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+            const sphereMaterial = new THREE.MeshPhongMaterial({ color: 0x3949ab });
+            classicalSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            classicalScene.add(classicalSphere);
+            
+            // Create a floor
+            const floorGeometry = new THREE.BoxGeometry(10, 0.2, 10);
+            const floorMaterial = new THREE.MeshPhongMaterial({ color: 0xc5cae9 });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.position.y = -2;
+            classicalScene.add(floor);
+            
+            // Add trajectory visualization
+            const trajectoryGeometry = new THREE.BufferGeometry();
+            const trajectoryMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+            const trajectory = new THREE.Line(trajectoryGeometry, trajectoryMaterial);
+            classicalScene.add(trajectory);
+            
+            // Physics variables
+            classicalSphere.userData.velocity = new THREE.Vector3(0.05, 0.1, 0);
+            classicalSphere.userData.acceleration = new THREE.Vector3(0, -0.01, 0);
+            classicalSphere.userData.positions = [];
+            
+            // Animation loop
+            function animate() {
+                classicalAnimationId = requestAnimationFrame(animate);
+                
+                // Update physics
+                classicalSphere.userData.velocity.add(classicalSphere.userData.acceleration);
+                classicalSphere.position.add(classicalSphere.userData.velocity);
+                
+                // Bounce off floor
+                if (classicalSphere.position.y < -1.5) {
+                    classicalSphere.position.y = -1.5;
+                    classicalSphere.userData.velocity.y = -classicalSphere.userData.velocity.y * 0.8;
+                }
+                
+                // Bounce off walls
+                if (Math.abs(classicalSphere.position.x) > 4.5) {
+                    classicalSphere.userData.velocity.x = -classicalSphere.userData.velocity.x;
+                }
+                
+                if (Math.abs(classicalSphere.position.z) > 4.5) {
+                    classicalSphere.userData.velocity.z = -classicalSphere.userData.velocity.z;
+                }
+                
+                // Update trajectory
+                classicalSphere.userData.positions.push(classicalSphere.position.clone());
+                if (classicalSphere.userData.positions.length > 100) {
+                    classicalSphere.userData.positions.shift();
+                }
+                
+                const points = classicalSphere.userData.positions;
+                trajectoryGeometry.setFromPoints(points);
+                
+                // Update controls and render
+                classicalControls.update();
+                classicalRenderer.render(classicalScene, classicalCamera);
+            }
+            
+            animate();
+            
+            // Update displayed values
+            document.getElementById('mass-value').textContent = document.getElementById('mass').value;
+            document.getElementById('velocity-value').textContent = document.getElementById('velocity').value;
+            document.getElementById('gravity-value').textContent = document.getElementById('gravity').value;
+            
+            // Handle window resize
+            window.addEventListener('resize', onClassicalWindowResize);
+        }
+        
+        function onClassicalWindowResize() {
+            if (!classicalCamera || !classicalRenderer) return;
+            
+            classicalCamera.aspect = document.getElementById('classical-simulation').clientWidth / document.getElementById('classical-simulation').clientHeight;
+            classicalCamera.updateProjectionMatrix();
+            classicalRenderer.setSize(
+                document.getElementById('classical-simulation').clientWidth,
+                document.getElementById('classical-simulation').clientHeight
+            );
+        }
+        
+        function updateClassicalSimulation() {
+            if (!classicalSphere) return;
+            
+            const mass = parseFloat(document.getElementById('mass').value);
+            document.getElementById('mass-value').textContent = mass;
+            
+            const velocity = parseFloat(document.getElementById('velocity').value);
+            document.getElementById('velocity-value').textContent = velocity;
+            
+            const gravity = parseFloat(document.getElementById('gravity').value);
+            document.getElementById('gravity-value').textContent = gravity;
+            
+            // Scale the sphere based on mass
+            const scale = 0.2 + (mass / 10) * 0.6;
+            classicalSphere.scale.set(scale, scale, scale);
+            
+            // Update velocity
+            classicalSphere.userData.velocity.set(
+                (velocity / 100) * (Math.random() * 2 - 1),
+                velocity / 50,
+                (velocity / 100) * (Math.random() * 2 - 1)
+            );
+            
+            // Update gravity (acceleration)
+            classicalSphere.userData.acceleration.y = -gravity / 1000;
+        }
+        
+        function resetClassicalSimulation() {
+            if (!classicalSphere) return;
+            
+            classicalSphere.position.set(0, 0, 0);
+            classicalSphere.userData.velocity.set(0.05, 0.1, 0);
+            classicalSphere.userData.positions = [];
+        }
+        
+        // Quantum Physics Simulation
+        let quantumScene, quantumCamera, quantumRenderer, quantumControls, quantumWaveMesh;
+        let quantumAnimationId;
+        let isObserving = false;
+        
+        function initQuantumSimulation() {
+            if (quantumScene) return; // Prevent multiple initializations
+            
+            // Create scene
+            quantumScene = new THREE.Scene();
+            quantumScene.background = new THREE.Color(0xf0f5ff);
+            
+            // Create camera
+            quantumCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            quantumCamera.position.z = 5;
+            quantumCamera.position.y = 2;
+            
+            // Create renderer
+            quantumRenderer = new THREE.WebGLRenderer({ antialias: true });
+            quantumRenderer.setSize(
+                document.getElementById('quantum-simulation').clientWidth,
+                document.getElementById('quantum-simulation').clientHeight
+            );
+            document.getElementById('quantum-simulation').innerHTML = '';
+            document.getElementById('quantum-simulation').appendChild(quantumRenderer.domElement);
+            
+            // Add controls
+            quantumControls = new THREE.OrbitControls(quantumCamera, quantumRenderer.domElement);
+            quantumControls.enableDamping = true;
+            quantumControls.dampingFactor = 0.05;
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            quantumScene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            quantumScene.add(directionalLight);
+            
+            // Create potential barrier
+            const barrierGeometry = new THREE.BoxGeometry(0.5, 2, 10);
+            const barrierMaterial = new THREE.MeshPhongMaterial({
+                color: 0xff5722,
+                transparent: true,
+                opacity: 0.7
+            });
+            const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
+            quantumScene.add(barrier);
+            
+            // Create a floor
+            const floorGeometry = new THREE.BoxGeometry(20, 0.2, 10);
+            const floorMaterial = new THREE.MeshPhongMaterial({ color: 0xc5cae9 });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.position.y = -1;
+            quantumScene.add(floor);
+            
+            // Create quantum wave function visualization
+            const waveGeometry = new THREE.PlaneGeometry(15, 2, 150, 1);
+            const waveMaterial = new THREE.MeshBasicMaterial({
+                color: 0x3f51b5,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.7,
+                wireframe: false
+            });
+            quantumWaveMesh = new THREE.Mesh(waveGeometry, waveMaterial);
+            quantumWaveMesh.rotation.x = -Math.PI / 2;
+            quantumWaveMesh.position.y = 0;
+            quantumScene.add(quantumWaveMesh);
+            
+            // Add particle visualization (when observed)
+            const particleGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+            const particleMaterial = new THREE.MeshPhongMaterial({
+                color: 0x3949ab,
+                transparent: true,
+                opacity: 0
+            });
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            quantumScene.add(particle);
+            quantumWaveMesh.userData.particle = particle;
+            
+            // Wave animation data
+            quantumWaveMesh.userData = {
+                time: 0,
+                waveSpeed: 0.05,
+                wavelength: 2,
+                amplitude: 0.5,
+                tunnelProbability: 0.3,
+                position: -5,
+                particle: particle,
+                potentialHeight: 5,
+                particleEnergy: 3
+            };
+            
+            // Animation loop
+            function animate() {
+                quantumAnimationId = requestAnimationFrame(animate);
+                
+                // Update wave function
+                updateQuantumWave();
+                
+                // Update controls and render
+                quantumControls.update();
+                quantumRenderer.render(quantumScene, quantumCamera);
+            }
+            
+            animate();
+            
+            // Update displayed values
+            document.getElementById('potential-value').textContent = document.getElementById('potential').value;
+            document.getElementById('energy-value').textContent = document.getElementById('energy').value;
+            document.getElementById('wavelength-value').textContent = document.getElementById('wavelength').value;
+            
+            // Handle window resize
+            window.addEventListener('resize', onQuantumWindowResize);
+        }
+        
+        function updateQuantumWave() {
+            const data = quantumWaveMesh.userData;
+            data.time += data.waveSpeed;
+            
+            // Calculate tunneling probability based on barrier height vs energy
+            data.tunnelProbability = Math.exp(-2 * Math.sqrt(2 * (data.potentialHeight - data.particleEnergy)));
+            if (data.tunnelProbability > 0.9) data.tunnelProbability = 0.9;
+            if (data.tunnelProbability < 0.01) data.tunnelProbability = 0.01;
+            
+            // Update wave geometry
+            const vertices = quantumWaveMesh.geometry.attributes.position.array;
+            for (let i = 0; i < vertices.length; i += 3) {
+                const x = vertices[i];
+                
+                // Adjust amplitude and phase for different regions (before, at, and after the barrier)
+                if (x < -0.25) {
+                    // Incident wave
+                    vertices[i + 2] = Math.sin(data.time + x / data.wavelength) * data.amplitude;
+                } else if (x >= -0.25 && x <= 0.25) {
+                    // Inside barrier - exponential decay
+                    const barrierX = x + 0.25;
+                    const decay = Math.exp(-barrierX * 5);
+                    vertices[i + 2] = Math.sin(data.time + x / data.wavelength) * data.amplitude * decay;
+                } else {
+                    // Transmitted wave (with reduced amplitude based on tunneling probability)
+                    vertices[i + 2] = Math.sin(data.time + x / data.wavelength) * data.amplitude * data.tunnelProbability;
+                }
+                
+                // When observing, collapse the wave function
+                if (isObserving) {
+                    // Almost zero amplitude everywhere except at the "measured" position
+                    const particleX = data.particle.position.x;
+                    const distance = Math.abs(x - particleX);
+                    if (distance > 0.5) {
+                        vertices[i + 2] *= 0.1;
+                    }
+                }
+            }
+            
+            quantumWaveMesh.geometry.attributes.position.needsUpdate = true;
+            
+            // Update particle position when observed
+            if (isObserving) {
+                data.particle.material.opacity = 1;
+                
+                // If particle was observed before the barrier
+                if (data.particle.position.x < 0 && data.particle.userData.isMoving) {
+                    data.particle.position.x += 0.05;
+                    
+                    // When reaching barrier, decide whether to tunnel based on probability
+                    if (data.particle.position.x >= -0.25 && data.particle.position.x <= 0.25) {
+                        const tunnelRandom = Math.random();
+                        if (tunnelRandom > data.tunnelProbability) {
+                            // Reflect back
+                            data.particle.userData.isMoving = false;
+                            data.particle.userData.isReflected = true;
+                        }
+                    }
+                } else if (data.particle.userData.isReflected) {
+                    // Particle is reflected
+                    data.particle.position.x -= 0.05;
+                    if (data.particle.position.x < -5) {
+                        data.particle.userData.isReflected = false;
+                    }
+                }
+            } else {
+                data.particle.material.opacity = 0;
+            }
+        }
+        
+        function onQuantumWindowResize() {
+            if (!quantumCamera || !quantumRenderer) return;
+            
+            quantumCamera.aspect = document.getElementById('quantum-simulation').clientWidth / document.getElementById('quantum-simulation').clientHeight;
+            quantumCamera.updateProjectionMatrix();
+            quantumRenderer.setSize(
+                document.getElementById('quantum-simulation').clientWidth,
+                document.getElementById('quantum-simulation').clientHeight
+            );
+        }
+        
+        function updateQuantumSimulation() {
+            if (!quantumWaveMesh) return;
+            
+            const potential = parseFloat(document.getElementById('potential').value);
+            document.getElementById('potential-value').textContent = potential;
+            
+            const energy = parseFloat(document.getElementById('energy').value);
+            document.getElementById('energy-value').textContent = energy;
+            
+            const wavelength = parseFloat(document.getElementById('wavelength').value);
+            document.getElementById('wavelength-value').textContent = wavelength;
+            
+            // Update quantum wave parameters
+            quantumWaveMesh.userData.potentialHeight = potential;
+            quantumWaveMesh.userData.particleEnergy = energy;
+            quantumWaveMesh.userData.wavelength = wavelength;
+            
+            // Adjust barrier visualization based on potential
+            const barrier = quantumScene.getObjectByProperty('geometry', new THREE.BoxGeometry(0.5, 2, 10));
+            if (barrier) {
+                barrier.scale.y = 0.5 + potential / 5;
+                barrier.material.opacity = 0.3 + potential / 15;
+            }
+        }
+        
+        function toggleObservation() {
+            isObserving = !isObserving;
+            
+            if (isObserving) {
+                // When starting observation, place the particle at a random position based on probability
+                const data = quantumWaveMesh.userData;
+                
+                // Higher probability to find the particle in areas of high amplitude
+                let x;
+                if (Math.random() < 0.7) {
+                    // Usually before the barrier
+                    x = -2 - Math.random() * 3;
+                } else if (Math.random() < data.tunnelProbability) {
+                    // Sometimes after the barrier (based on tunneling probability)
+                    x = 2 + Math.random() * 3;
+                } else {
+                    // Rarely in the barrier
+                    x = -0.25 + Math.random() * 0.5;
+                }
+                
+                data.particle.position.set(x, 0, 0);
+                data.particle.userData.isMoving = true;
+                data.particle.userData.isReflected = false;
+            }
+        }
+        
+        function resetQuantumSimulation() {
+            if (!quantumWaveMesh) return;
+            
+            isObserving = false;
+            quantumWaveMesh.userData.time = 0;
+            quantumWaveMesh.userData.particle.material.opacity = 0;
+            updateQuantumSimulation();
+        }
+        
+        // Comparison Simulation
+        let comparisonScene, comparisonCamera, comparisonRenderer, comparisonControls;
+        let classicalParticle, quantumWave, comparisonBarrier;
+        let comparisonAnimationId;
+        let simulationSpeed = 1;
+        
+        function initComparisonSimulation() {
+            if (comparisonScene) return; // Prevent multiple initializations
+            
+            // Create scene
+            comparisonScene = new THREE.Scene();
+            comparisonScene.background = new THREE.Color(0xf0f5ff);
+            
+            // Create camera
+            comparisonCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            comparisonCamera.position.z = 7;
+            comparisonCamera.position.y = 3;
+            
+            // Create renderer
+            comparisonRenderer = new THREE.WebGLRenderer({ antialias: true });
+            comparisonRenderer.setSize(
+                document.getElementById('comparison-simulation').clientWidth,
+                document.getElementById('comparison-simulation').clientHeight
+            );
+            document.getElementById('comparison-simulation').innerHTML = '';
+            document.getElementById('comparison-simulation').appendChild(comparisonRenderer.domElement);
+            
+            // Add controls
+            comparisonControls = new THREE.OrbitControls(comparisonCamera, comparisonRenderer.domElement);
+            comparisonControls.enableDamping = true;
+            comparisonControls.dampingFactor = 0.05;
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            comparisonScene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            comparisonScene.add(directionalLight);
+            
+            // Create two floors for classical (top) and quantum (bottom)
+            const classicalFloorGeometry = new THREE.BoxGeometry(20, 0.2, 5);
+            const classicalFloorMaterial = new THREE.MeshPhongMaterial({ color: 0xb2dfdb });
+            const classicalFloor = new THREE.Mesh(classicalFloorGeometry, classicalFloorMaterial);
+            classicalFloor.position.set(0, 2, -2);
+            comparisonScene.add(classicalFloor);
+            
+            const quantumFloorGeometry = new THREE.BoxGeometry(20, 0.2, 5);
+            const quantumFloorMaterial = new THREE.MeshPhongMaterial({ color: 0xbbdefb });
+            const quantumFloor = new THREE.Mesh(quantumFloorGeometry, quantumFloorMaterial);
+            quantumFloor.position.set(0, -2, -2);
+            comparisonScene.add(quantumFloor);
+            
+            // Add labels
+            const createTextMesh = (text, position) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 64;
+                const context = canvas.getContext('2d');
+                context.fillStyle = '#000000';
+                context.font = '24px Arial';
+                context.fillText(text, 10, 40);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true
+                });
+                const geometry = new THREE.PlaneGeometry(4, 1);
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.copy(position);
+                return mesh;
+            };
+            
+            comparisonScene.add(createTextMesh("Classical Physics", new THREE.Vector3(-7, 3.5, 0)));
+            comparisonScene.add(createTextMesh("Quantum Physics", new THREE.Vector3(-7, -0.5, 0)));
+            
+            // Create barriers
+            const barrierGeometry = new THREE.BoxGeometry(0.5, 2, 5);
+            const barrierMaterial = new THREE.MeshPhongMaterial({
+                color: 0xff5722,
+                transparent: true,
+                opacity: 0.7
+            });
+            
+            const classicalBarrier = new THREE.Mesh(barrierGeometry, barrierMaterial.clone());
+            classicalBarrier.position.set(0, 2, -2);
+            comparisonScene.add(classicalBarrier);
+            
+            const quantumBarrier = new THREE.Mesh(barrierGeometry, barrierMaterial.clone());
+            quantumBarrier.position.set(0, -2, -2);
+            comparisonScene.add(quantumBarrier);
+            
+            comparisonBarrier = { classical: classicalBarrier, quantum: quantumBarrier };
+            
+            // Create classical particle
+            const sphereGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+            const sphereMaterial = new THREE.MeshPhongMaterial({ color: 0x3949ab });
+            classicalParticle = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            classicalParticle.position.set(-5, 2, -2);
+            comparisonScene.add(classicalParticle);
+            classicalParticle.userData = {
+                velocity: 0.05,
+                energy: 3,
+                reflected: false,
+                initialPosition: new THREE.Vector3(-5, 2, -2)
+            };
+            
+            // Create quantum wave
+            const waveGeometry = new THREE.PlaneGeometry(15, 2, 150, 1);
+            const waveMaterial = new THREE.MeshBasicMaterial({
+                color: 0x3f51b5,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.7,
+                wireframe: false
+            });
+            quantumWave = new THREE.Mesh(waveGeometry, waveMaterial);
+            quantumWave.rotation.x = -Math.PI / 2;
+            quantumWave.position.set(0, -2, -2);
+            comparisonScene.add(quantumWave);
+            quantumWave.userData = {
+                time: 0,
+                waveSpeed: 0.05,
+                wavelength: 2,
+                amplitude: 0.5,
+                tunnelProbability: 0.3,
+                potentialHeight: 5,
+                particleEnergy: 3
+            };
+            
+            // Create quantum particle (for showing tunneling)
+            const quantumParticleGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+            const quantumParticleMaterial = new THREE.MeshPhongMaterial({
+                color: 0x3949ab,
+                transparent: true,
+                opacity: 0.7
+            });
+            const quantumParticle = new THREE.Mesh(quantumParticleGeometry, quantumParticleMaterial);
+            quantumParticle.position.set(-5, -2, -2);
+            quantumParticle.visible = false;
+            comparisonScene.add(quantumParticle);
+            quantumWave.userData.particle = quantumParticle;
+            
+            // Animation loop
+            function animate() {
+                comparisonAnimationId = requestAnimationFrame(animate);
+                
+                // Update classical particle
+                updateClassicalParticle();
+                
+                // Update quantum wave
+                updateQuantumWaveComparison();
+                
+                // Update controls and render
+                comparisonControls.update();
+                comparisonRenderer.render(comparisonScene, comparisonCamera);
+            }
+            
+            animate();
+            
+            // Update displayed values
+            document.getElementById('barrier-height-value').textContent = document.getElementById('barrier-height').value;
+            document.getElementById('particle-energy-value').textContent = document.getElementById('particle-energy').value;
+            
+            // Handle window resize
+            window.addEventListener('resize', onComparisonWindowResize);
+        }
+        
+        function updateClassicalParticle() {
+            if (!classicalParticle) return;
+            
+            if (!classicalParticle.userData.reflected) {
+                // Moving right
+                classicalParticle.position.x += classicalParticle.userData.velocity * simulationSpeed;
+                
+                // Check for barrier collision
+                if (classicalParticle.position.x >= -0.25 && classicalParticle.position.x <= 0.25) {
+                    // Only reflect if energy is less than barrier height
+                    if (classicalParticle.userData.energy < classicalParticle.userData.barrierHeight) {
+                        classicalParticle.userData.reflected = true;
+                    }
+                }
+            } else {
+                // Moving left (reflected)
+                classicalParticle.position.x -= classicalParticle.userData.velocity * simulationSpeed;
+                
+                // Reset if it goes back to starting position
+                if (classicalParticle.position.x <= classicalParticle.userData.initialPosition.x) {
+                    classicalParticle.position.x = classicalParticle.userData.initialPosition.x;
+                    classicalParticle.userData.reflected = false;
+                }
+            }
+            
+            // If particle energy is greater than barrier, allow it to pass through
+            if (classicalParticle.userData.energy >= classicalParticle.userData.barrierHeight && 
+                classicalParticle.position.x > 8) {
+                // Reset to starting position for continuous demo
+                classicalParticle.position.x = classicalParticle.userData.initialPosition.x;
+            }
+        }
+        
+        function updateQuantumWaveComparison() {
+            const data = quantumWave.userData;
+            data.time += data.waveSpeed * simulationSpeed;
+            
+            // Calculate tunneling probability based on barrier height vs energy
+            data.tunnelProbability = Math.exp(-2 * Math.sqrt(2 * (data.potentialHeight - data.particleEnergy)));
+            if (data.tunnelProbability > 0.9) data.tunnelProbability = 0.9;
+            if (data.tunnelProbability < 0.01) data.tunnelProbability = 0.01;
+            
+            // Update wave geometry
+            const vertices = quantumWave.geometry.attributes.position.array;
+            for (let i = 0; i < vertices.length; i += 3) {
+                const x = vertices[i];
+                
+                // Adjust amplitude and phase for different regions (before, at, and after the barrier)
+                if (x < -0.25) {
+                    // Incident wave
+                    vertices[i + 2] = Math.sin(data.time + x / data.wavelength) * data.amplitude;
+                } else if (x >= -0.25 && x <= 0.25) {
+                    // Inside barrier - exponential decay
+                    const barrierX = x + 0.25;
+                    const decay = Math.exp(-barrierX * 5);
+                    vertices[i + 2] = Math.sin(data.time + x / data.wavelength) * data.amplitude * decay;
+                } else {
+                    // Transmitted wave (with reduced amplitude based on tunneling probability)
+                    vertices[i + 2] = Math.sin(data.time + x / data.wavelength) * data.amplitude * data.tunnelProbability;
+                }
+            }
+            
+            quantumWave.geometry.attributes.position.needsUpdate = true;
+            
+            // Show a representative quantum particle with some probability of tunneling
+            const particle = data.particle;
+            
+            // Only show the particle occasionally
+            if (Math.random() < 0.005 && !particle.visible) {
+                particle.visible = true;
+                particle.position.x = -5;
+                particle.userData = {
+                    willTunnel: Math.random() < data.tunnelProbability,
+                    reflected: false
+                };
+            }
+            
+            // Move the particle
+            if (particle.visible) {
+                if (!particle.userData.reflected) {
+                    particle.position.x += 0.05 * simulationSpeed;
+                    
+                    // When reaches barrier
+                    if (particle.position.x >= -0.25 && particle.position.x <= 0.25) {
+                        if (!particle.userData.willTunnel) {
+                            particle.userData.reflected = true;
+                        }
+                    }
+                } else {
+                    // Reflect
+                    particle.position.x -= 0.05 * simulationSpeed;
+                }
+                
+                // Hide after going out of view
+                if ((particle.userData.willTunnel && particle.position.x > 8) ||
+                    (particle.userData.reflected && particle.position.x < -8)) {
+                    particle.visible = false;
+                }
+            }
+        }
+        
+        function onComparisonWindowResize() {
+            if (!comparisonCamera || !comparisonRenderer) return;
+            
+            comparisonCamera.aspect = document.getElementById('comparison-simulation').clientWidth / document.getElementById('comparison-simulation').clientHeight;
+            comparisonCamera.updateProjectionMatrix();
+            comparisonRenderer.setSize(
+                document.getElementById('comparison-simulation').clientWidth,
+                document.getElementById('comparison-simulation').clientHeight
+            );
+        }
+        
+        function updateComparisonSimulation() {
+            if (!comparisonBarrier || !classicalParticle || !quantumWave) return;
+            
+            const barrierHeight = parseFloat(document.getElementById('barrier-height').value);
+            document.getElementById('barrier-height-value').textContent = barrierHeight;
+            
+            const particleEnergy = parseFloat(document.getElementById('particle-energy').value);
+            document.getElementById('particle-energy-value').textContent = particleEnergy;
+            
+            // Update barrier visualization
+            comparisonBarrier.classical.scale.y = 0.5 + barrierHeight / 5;
+            comparisonBarrier.quantum.scale.y = 0.5 + barrierHeight / 5;
+            
+            // Update classical particle energy and barrier height
+            classicalParticle.userData.energy = particleEnergy;
+            classicalParticle.userData.barrierHeight = barrierHeight;
+            
+            // Update quantum wave parameters
+            quantumWave.userData.potentialHeight = barrierHeight;
+            quantumWave.userData.particleEnergy = particleEnergy;
+            
+            // Visual indicator of particle energy
+            const energyScale = 0.2 + (particleEnergy / 10) * 0.4;
+            classicalParticle.scale.set(energyScale, energyScale, energyScale);
+            quantumWave.userData.particle.scale.set(energyScale, energyScale, energyScale);
+        }
+        
+        function resetComparisonSimulation() {
+            if (!classicalParticle || !quantumWave) return;
+            
+            classicalParticle.position.copy(classicalParticle.userData.initialPosition);
+            classicalParticle.userData.reflected = false;
+            
+            quantumWave.userData.time = 0;
+            quantumWave.userData.particle.visible = false;
+            
+            updateComparisonSimulation();
+        }
+        
+        function toggleSimulationSpeed() {
+            simulationSpeed = simulationSpeed === 1 ? 2 : 1;
+        }
+        
+        // Initialize the first tab (Classical Physics) on page load
+        window.onload = function() {
+            initClassicalSimulation();
+        }
+    </script>
+</body>
+</html>

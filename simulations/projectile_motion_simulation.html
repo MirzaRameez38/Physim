@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Projectile Motion Simulation</title>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.7/build/dat.gui.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      color: #333;
+    }
+    
+    #canvas-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    
+    #info-panel {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 15px;
+      border-radius: 10px;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 100;
+    }
+    
+    #data-display {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 14px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 100;
+    }
+    
+    button {
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background: #3367d6;
+    }
+    
+    .tab {
+      overflow: hidden;
+      border: 1px solid #ccc;
+      background-color: #f1f1f1;
+      border-radius: 5px 5px 0 0;
+    }
+    
+    .tab button {
+      background-color: inherit;
+      float: left;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 10px 16px;
+      transition: 0.3s;
+      color: #333;
+      margin: 0;
+    }
+    
+    .tab button:hover {
+      background-color: #ddd;
+    }
+    
+    .tab button.active {
+      background-color: #4285f4;
+      color: white;
+    }
+    
+    .tabcontent {
+      display: none;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+    }
+    
+    .formula {
+      font-family: 'Times New Roman', serif;
+      font-style: italic;
+      background-color: #f8f9fa;
+      padding: 5px;
+      border-radius: 3px;
+      border-left: 3px solid #4285f4;
+      margin: 5px 0;
+    }
+    
+    h2 {
+      color: #4285f4;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    
+    h3 {
+      color: #5f6368;
+      margin-top: 12px;
+      margin-bottom: 8px;
+    }
+    
+    .grid-data {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+    
+    .data-label {
+      font-weight: bold;
+    }
+    
+    #theoretical-info {
+      background-color: #eff7ff;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #d0e3ff;
+    }
+  </style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<div id="info-panel">
+  <div class="tab">
+    <button class="tablinks active" onclick="openTab(event, 'Introduction')">Intro</button>
+    <button class="tablinks" onclick="openTab(event, 'Theory')">Theory</button>
+    <button class="tablinks" onclick="openTab(event, 'Learning')">Learning</button>
+    <button class="tablinks" onclick="openTab(event, 'Controls')">Controls</button>
+  </div>
+
+  <div id="Introduction" class="tabcontent" style="display: block;">
+    <h2>3D Projectile Motion Simulation</h2>
+    <p>
+      Welcome to this interactive 3D simulation of projectile motion. This tool allows you to explore 
+      how objects move through the air when launched with an initial velocity and affected by gravity 
+      and air resistance [[1]].
+    </p>
+    <p>
+      Projectile motion is a type of motion experienced by an object that is projected into the air at an angle, 
+      subject to gravity and possibly air resistance. Without air resistance, the path of a projectile is a perfect 
+      parabola [[3]].
+    </p>
+    <p>
+      Use the control panel on the right to adjust parameters like initial velocity, launch angle, 
+      and environmental factors. Observe how changes affect the trajectory in real-time.
+    </p>
+    <p>
+      <button onclick="startSimulation()">Start Simulation</button>
+      <button onclick="resetSimulation()">Reset</button>
+    </p>
+  </div>
+
+  <div id="Theory" class="tabcontent">
+    <h2>Physics of Projectile Motion</h2>
+    <p>
+      Projectile motion is the motion of an object thrown or projected into the air, subject to only the 
+      acceleration of gravity and air resistance [[2]].
+    </p>
+    
+    <h3>Key Equations (Without Air Resistance)</h3>
+    <p>For an object launched from position (0,0,0) with initial velocity v₀ at angle θ:</p>
+    
+    <p><strong>Horizontal motion:</strong></p>
+    <p class="formula">x(t) = v₀·cos(θ)·t</p>
+    <p class="formula">v_x = v₀·cos(θ) (constant)</p>
+    
+    <p><strong>Vertical motion:</strong></p>
+    <p class="formula">y(t) = v₀·sin(θ)·t - (1/2)·g·t²</p>
+    <p class="formula">v_y = v₀·sin(θ) - g·t</p>
+    
+    <p><strong>Time of flight:</strong></p>
+    <p class="formula">T = (2·v₀·sin(θ))/g</p>
+    
+    <p><strong>Maximum height:</strong></p>
+    <p class="formula">h_max = (v₀²·sin²(θ))/(2g)</p>
+    
+    <p><strong>Range:</strong></p>
+    <p class="formula">R = (v₀²·sin(2θ))/g</p>
+    
+    <h3>With Air Resistance</h3>
+    <p>
+      Air resistance creates a drag force typically proportional to the square of velocity [[7]]:
+    </p>
+    <p class="formula">F_drag = (1/2)·C_d·ρ·A·v²</p>
+    <p>Where:</p>
+    <ul>
+      <li>C_d = drag coefficient</li>
+      <li>ρ = air density</li>
+      <li>A = cross-sectional area</li>
+      <li>v = velocity</li>
+    </ul>
+    
+    <p>
+      With air resistance, the equations of motion become more complex and typically require 
+      numerical integration to solve, as implemented in this simulation.
+    </p>
+  </div>
+
+  <div id="Learning" class="tabcontent">
+    <h2>Learning Outcomes</h2>
+    <p>After working with this simulation, you should be able to:</p>
+    <ol>
+      <li>Describe the path of a projectile and explain why it follows a parabolic trajectory (without air resistance) [[3]]</li>
+      <li>Calculate the maximum height, range, and flight time of a projectile</li>
+      <li>Explain how initial velocity and launch angle affect the trajectory</li>
+      <li>Understand how gravity influences projectile motion</li>
+      <li>Analyze the effects of air resistance on projectile motion</li>
+      <li>Decompose vectors into horizontal and vertical components</li>
+      <li>Apply the principle of independence of horizontal and vertical motion [[2]]</li>
+      <li>Predict how changes in parameters will affect the projectile's path</li>
+      <li>Connect theoretical calculations with visual observations</li>
+    </ol>
+    
+    <h2>Applications</h2>
+    <p>Understanding projectile motion is crucial in many fields:</p>
+    <ul>
+      <li>Sports (basketball, football, golf, javelin throw, etc.)</li>
+      <li>Ballistics and military applications</li>
+      <li>Rocket launches and space exploration</li>
+      <li>Civil engineering (water fountains, etc.)</li>
+      <li>Computer graphics and animation</li>
+    </ul>
+    
+    <h2>Suggested Experiments</h2>
+    <ol>
+      <li>Find the angle that maximizes range (with and without air resistance)</li>
+      <li>Investigate how air resistance affects the optimal launch angle [[1]]</li>
+      <li>Compare theoretical predictions with simulation results</li>
+      <li>Observe how the maximum height changes with launch angle</li>
+      <li>Study how the initial velocity affects the range (quadratic relationship)</li>
+    </ol>
+  </div>
+
+  <div id="Controls" class="tabcontent">
+    <h2>Simulation Controls</h2>
+    <p>
+      <strong>Camera Controls:</strong>
+      <ul>
+        <li>Left-click + drag: Rotate the view</li>
+        <li>Right-click + drag: Pan the view</li>
+        <li>Scroll wheel: Zoom in/out</li>
+      </ul>
+    </p>
+    
+    <p>
+      <strong>Parameter Controls:</strong>
+      <ul>
+        <li><strong>Initial Velocity:</strong> Speed at which the projectile is launched (m/s)</li>
+        <li><strong>Horizontal Angle:</strong> Angle in the x-z plane (degrees)</li>
+        <li><strong>Vertical Angle:</strong> Angle from the horizontal (degrees)</li>
+        <li><strong>Launch Height:</strong> Height from which projectile is launched (m)</li>
+        <li><strong>Gravity:</strong> Acceleration due to gravity (m/s²)</li>
+        <li><strong>Air Resistance:</strong> Drag coefficient * Area * Density / 2 * Mass</li>
+      </ul>
+    </p>
+    
+    <p>
+      <strong>Visualization Options:</strong>
+      <ul>
+        <li><strong>Show Trajectory:</strong> Display the complete predicted path</li>
+        <li><strong>Show Vectors:</strong> Display velocity and acceleration vectors</li>
+        <li><strong>Show Time Markers:</strong> Display position at regular time intervals</li>
+        <li><strong>Show Theoretical Values:</strong> Display calculated theoretical values</li>
+      </ul>
+    </p>
+    
+    <p>
+      <button onclick="startSimulation()">Start Simulation</button>
+      <button onclick="pauseSimulation()">Pause</button>
+      <button onclick="resetSimulation()">Reset</button>
+    </p>
+  </div>
+</div>
+
+<div id="data-display">
+  <div class="grid-data">
+    <div class="data-label">Time:</div>
+    <div><span id="time-value">0.00</span> s</div>
+    
+    <div class="data-label">Position (x, y, z):</div>
+    <div>(<span id="x-value">0.00</span>, <span id="y-value">0.00</span>, <span id="z-value">0.00</span>) m</div>
+    
+    <div class="data-label">Velocity:</div>
+    <div><span id="velocity-value">0.00</span> m/s</div>
+    
+    <div class="data-label">Current Height:</div>
+    <div><span id="height-value">0.00</span> m</div>
+    
+    <div class="data-label">Current Range:</div>
+    <div><span id="range-value">0.00</span> m</div>
+    
+    <div class="data-label">Max Height:</div>
+    <div><span id="max-height-value">0.00</span> m</div>
+    
+    <div class="data-label">Max Range:</div>
+    <div><span id="max-range-value">0.00</span> m</div>
+  </div>
+  
+  <div id="theoretical-info" style="display: none;">
+    <h3>Theoretical Values (No Air Resistance)</h3>
+    <div class="grid-data">
+      <div class="data-label">Time of Flight:</div>
+      <div><span id="theo-time-value">0.00</span> s</div>
+      
+      <div class="data-label">Max Height:</div>
+      <div><span id="theo-height-value">0.00</span> m</div>
+      
+      <div class="data-label">Range:</div>
+      <div><span id="theo-range-value">0.00</span> m</div>
+      
+      <div class="data-label">Optimal Angle:</div>
+      <div>45° (no air resistance)</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Initialize the simulation
+  let scene, camera, renderer, controls;
+  let projectile, trajectory, timeMarkers = [];
+  let velocityArrow, accelerationArrow;
+  let ground, gridHelper, axisHelper;
+  
+  // Physics parameters
+  const params = {
+    // Launch parameters
+    initialVelocity: 20, // m/s
+    horizontalAngle: 0,  // degrees (0 = +x direction)
+    verticalAngle: 45,   // degrees (0 = horizontal)
+    launchHeight: 1.0,   // meters
+    
+    // Environment parameters
+    gravity: 9.81,       // m/s^2
+    airResistance: 0.01, // Drag coefficient * Area * Density / (2 * Mass)
+    
+    // Simulation parameters
+    timeStep: 0.016,     // seconds (corresponds to ~60fps)
+    simulationSpeed: 1.0, // multiplier
+    
+    // Visualization options
+    showTrajectory: true,
+    showVectors: true,
+    showTimeMarkers: true,
+    timeMarkerInterval: 0.2, // seconds
+    showTheoreticalValues: false,
+    
+    // Debug options
+    debugInfo: false
+  };
+  
+  // Simulation state
+  const state = {
+    time: 0,
+    position: new THREE.Vector3(0, 0, 0),
+    velocity: new THREE.Vector3(0, 0, 0),
+    acceleration: new THREE.Vector3(0, 0, 0),
+    isRunning: false,
+    hasLaunched: false,
+    maxHeight: 0,
+    maxRange: 0,
+    landingPoint: new THREE.Vector3(0, 0, 0),
+    landingTime: 0
+  };
+  
+  // Theoretical calculations
+  function calculateTheoretical() {
+    // Convert angle to radians
+    const angleRad = params.verticalAngle * Math.PI / 180;
+    
+    // Time of flight (ignoring horizontal angle for simplicity)
+    const timeOfFlight = (2 * params.initialVelocity * Math.sin(angleRad)) / params.gravity;
+    
+    // Maximum height
+    const maxHeight = params.launchHeight + 
+                      (params.initialVelocity * Math.sin(angleRad))**2 / (2 * params.gravity);
+    
+    // Range (horizontal distance)
+    const range = params.initialVelocity * Math.cos(angleRad) * timeOfFlight;
+    
+    return {
+      timeOfFlight: timeOfFlight,
+      maxHeight: maxHeight,
+      range: range
+    };
+  }
+  
+  // Initialize Three.js scene
+  function init() {
+    // Create scene
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xc0e0ff);
+    
+    // Add fog for depth perception
+    scene.fog = new THREE.Fog(0xc0e0ff, 20, 100);
+    
+    // Create camera
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(10, 5, 10);
+    camera.lookAt(0, 0, 0);
+    
+    // Create renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+    
+    // Add orbit controls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 20, 10);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 50;
+    directionalLight.shadow.camera.left = -20;
+    directionalLight.shadow.camera.right = 20;
+    directionalLight.shadow.camera.top = 20;
+    directionalLight.shadow.camera.bottom = -20;
+    scene.add(directionalLight);
+    
+    // Create ground plane
+    const groundGeometry = new THREE.PlaneGeometry(100, 100);
+    const groundMaterial = new THREE.MeshStandardMaterial({
+      color: 0x88aa55,
+      roughness: 0.8,
+      metalness: 0.2,
+      side: THREE.DoubleSide
+    });
+    
+    ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    
+    // Add grid helper
+    gridHelper = new THREE.GridHelper(100, 100, 0x000000, 0x888888);
+    scene.add(gridHelper);
+    
+    // Add axis helper
+    axisHelper = new THREE.AxesHelper(5);
+    scene.add(axisHelper);
+    
+    // Add axis labels
+    addAxisLabels();
+    
+    // Create projectile
+    const projectileGeometry = new THREE.SphereGeometry(0.25, 32, 32);
+    const projectileMaterial = new THREE.MeshPhongMaterial({ color: 0xff4444 });
+    projectile = new THREE.Mesh(projectileGeometry, projectileMaterial);
+    projectile.castShadow = true;
+    scene.add(projectile);
+    
+    // Create trajectory line
+    const trajectoryMaterial = new THREE.LineBasicMaterial({ color: 0xff8888, linewidth: 2 });
+    const trajectoryGeometry = new THREE.BufferGeometry();
+    trajectory = new THREE.Line(trajectoryGeometry, trajectoryMaterial);
+    scene.add(trajectory);
+    
+    // Create arrows for vectors
+    velocityArrow = createArrow(0x00ff00); // Green for velocity
+    accelerationArrow = createArrow(0x0000ff); // Blue for acceleration
+    scene.add(velocityArrow);
+    scene.add(accelerationArrow);
+    
+    // Add GUI controls
+    setupGUI();
+    
+    // Add event listeners
+    window.addEventListener('resize', onWindowResize);
+    
+    // Reset simulation
+    resetSimulation();
+    
+    // Start animation loop
+    animate();
+  }
+  
+  // Add axis labels
+  function addAxisLabels() {
+    // Create text labels for axes
+    function createTextLabel(text, position, color = 0xffffff) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'transparent';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.font = 'Bold 40px Arial';
+      ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      const material = new THREE.SpriteMaterial({ map: texture });
+      const sprite = new THREE.Sprite(material);
+      sprite.position.copy(position);
+      sprite.scale.set(2, 1, 1);
+      return sprite;
+    }
+    
+    // Add X, Y, Z labels
+    scene.add(createTextLabel('X', new THREE.Vector3(6, 0, 0), 0xff0000));
+    scene.add(createTextLabel('Y', new THREE.Vector3(0, 6, 0), 0x00ff00));
+    scene.add(createTextLabel('Z', new THREE.Vector3(0, 0, 6), 0x0000ff));
+  }
+  
+  // Create arrow helper for vectors
+  function createArrow(color) {
+    const arrowHelper = new THREE.ArrowHelper(
+      new THREE.Vector3(1, 0, 0),
+      new THREE.Vector3(0, 0, 0),
+      1,
+      color,
+      0.2,
+      0.1
+    );
+    return arrowHelper;
+  }
+  
+  // Update arrow helper
+  function updateArrow(arrow, origin, direction, length) {
+    arrow.position.copy(origin);
+    if (direction.length() > 0) {
+      arrow.setDirection(direction.normalize());
+      arrow.setLength(length, 0.2 * length, 0.1 * length);
+    }
+  }
+  
+  // Create time marker
+  function createTimeMarker(position, time) {
+    const geometry = new THREE.SphereGeometry(0.1, 16, 16);
+    const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const marker = new THREE.Mesh(geometry, material);
+    marker.position.copy(position);
+    
+    // Add text label
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 32;
+    const context = canvas.getContext('2d');
+    context.fillStyle = 'rgba(0, 0, 0, 0)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = 'white';
+    context.font = '24px Arial';
+    context.textAlign = 'center';
+    context.fillText(time.toFixed(1) + 's', canvas.width / 2, 24);
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    const labelMaterial = new THREE.SpriteMaterial({ map: texture });
+    const label = new THREE.Sprite(labelMaterial);
+    label.position.set(0, 0.2, 0);
+    label.scale.set(1, 0.5, 1);
+    marker.add(label);
+    
+    scene.add(marker);
+    timeMarkers.push(marker);
+    
+    return marker;
+  }
+  
+  // Calculate initial conditions
+  function calculateInitialConditions() {
+    // Convert angles from degrees to radians
+    const horizontalAngleRad = (params.horizontalAngle * Math.PI) / 180;
+    const verticalAngleRad = (params.verticalAngle * Math.PI) / 180;
+    
+    // Calculate initial velocity components
+    const vHorizontal = params.initialVelocity * Math.cos(verticalAngleRad);
+    const vx = vHorizontal * Math.cos(horizontalAngleRad);
+    const vz = vHorizontal * Math.sin(horizontalAngleRad);
+    const vy = params.initialVelocity * Math.sin(verticalAngleRad);
+    
+    // Set initial state
+    state.time = 0;
+    state.position.set(0, params.launchHeight, 0);
+    state.velocity.set(vx, vy, vz);
+    state.acceleration.set(0, -params.gravity, 0); // Initially just gravity
+    state.maxHeight = params.launchHeight;
+    state.maxRange = 0;
+    
+    // Update projectile position
+    projectile.position.copy(state.position);
+    
+    // Set up trajectory prediction
+    predictTrajectory();
+    
+    // Update theoretical values
+    updateTheoreticalValues();
+  }
+  
+  // Update theoretical values display
+  function updateTheoreticalValues() {
+    const theoretical = calculateTheoretical();
+    
+    document.getElementById('theo-time-value').textContent = theoretical.timeOfFlight.toFixed(2);
+    document.getElementById('theo-height-value').textContent = theoretical.maxHeight.toFixed(2);
+    document.getElementById('theo-range-value').textContent = theoretical.range.toFixed(2);
+    
+    // Show or hide theoretical values based on user preference
+    document.getElementById('theoretical-info').style.display = 
+      params.showTheoreticalValues ? 'block' : 'none';
+  }
+  
+  // Predict trajectory for visualization
+  function predictTrajectory() {
+    // Clear old prediction
+    clearTimeMarkers();
+    
+    // Initialize points array with starting position
+    const points = [state.position.clone()];
+    
+    // Variables for simulation
+    const tempPos = state.position.clone();
+    const tempVel = state.velocity.clone();
+    const tempAcc = new THREE.Vector3();
+    
+    let tempTime = 0;
+    let nextMarkerTime = params.timeMarkerInterval;
+    let inFlight = true;
+    
+    // Run simulation until projectile hits ground or exceeds limits
+    while (inFlight && tempTime < 60 && points.length < 10000) {
+      // Calculate air resistance
+      if (params.airResistance > 0) {
+        const drag = tempVel.clone().normalize();
+        const velMagSq = tempVel.lengthSq();
+        drag.multiplyScalar(-params.airResistance * velMagSq);
+        
+        // Total acceleration = gravity + drag/mass
+        tempAcc.set(drag.x, -params.gravity + drag.y, drag.z);
+      } else {
+        tempAcc.set(0, -params.gravity, 0);
+      }
+      
+      // Update velocity (v = v0 + a*t)
+      tempVel.x += tempAcc.x * params.timeStep;
+      tempVel.y += tempAcc.y * params.timeStep;
+      tempVel.z += tempAcc.z * params.timeStep;
+      
+      // Update position (p = p0 + v*t + 0.5*a*t^2)
+      tempPos.x += tempVel.x * params.timeStep + 0.5 * tempAcc.x * params.timeStep * params.timeStep;
+      tempPos.y += tempVel.y * params.timeStep + 0.5 * tempAcc.y * params.timeStep * params.timeStep;
+      tempPos.z += tempVel.z * params.timeStep + 0.5 * tempAcc.z * params.timeStep * params.timeStep;
+      
+      // Add point to trajectory
+      points.push(tempPos.clone());
+      
+      // Update time
+      tempTime += params.timeStep;
+      
+      // Check if it's time to add a marker
+      if (params.showTimeMarkers && tempTime >= nextMarkerTime) {
+        createTimeMarker(tempPos.clone(), nextMarkerTime);
+        nextMarkerTime += params.timeMarkerInterval;
+      }
+      
+      // Check if projectile has hit the ground
+      if (tempPos.y <= 0) {
+        // Interpolate to find exact ground intersection
+        const tToGround = -tempPos.y / tempVel.y;
+        const landingPoint = new THREE.Vector3(
+          tempPos.x - tempVel.x * tToGround,
+          0,
+          tempPos.z - tempVel.z * tToGround
+        );
+        points.push(landingPoint);
+        inFlight = false;
+        
+        // Save landing information
+        state.landingPoint.copy(landingPoint);
+        state.landingTime = tempTime - tToGround;
+        
+        // Create special marker for landing point
+        const landingMarker = createTimeMarker(landingPoint, state.landingTime);
+        landingMarker.scale.set(2, 2, 2);
+        landingMarker.material.color.set(0xff0000);
+      }
+    }
+    
+    // Update trajectory line
+    trajectory.geometry.dispose();
+    trajectory.geometry = new THREE.BufferGeometry().setFromPoints(points);
+    trajectory.visible = params.showTrajectory;
+  }
+  
+  // Clear all time markers
+  function clearTimeMarkers() {
+    for (const marker of timeMarkers) {
+      scene.remove(marker);
+    }
+    timeMarkers = [];
+  }
+  
+  // Update physics
+  function updatePhysics(deltaTime) {
+    // Scale by simulation speed
+    const dt = deltaTime * params.simulationSpeed;
+    
+    // Update time
+    state.time += dt;
+    
+    // Calculate air resistance (proportional to v^2)
+    if (params.airResistance > 0) {
+      const drag = state.velocity.clone().normalize();
+      const velMagSq = state.velocity.lengthSq();
+      drag.multiplyScalar(-params.airResistance * velMagSq);
+      
+      // Total acceleration = gravity + drag/mass
+      state.acceleration.set(
+        drag.x,
+        -params.gravity + drag.y,
+        drag.z
+      );
+    } else {
+      state.acceleration.set(0, -params.gravity, 0);
+    }
+    
+    // Update velocity (v = v0 + a*t)
+    state.velocity.x += state.acceleration.x * dt;
+    state.velocity.y += state.acceleration.y * dt;
+    state.velocity.z += state.acceleration.z * dt;
+    
+    // Update position (p = p0 + v*t + 0.5*a*t^2)
+    state.position.x += state.velocity.x * dt + 0.5 * state.acceleration.x * dt * dt;
+    state.position.y += state.velocity.y * dt + 0.5 * state.acceleration.y * dt * dt;
+    state.position.z += state.velocity.z * dt + 0.5 * state.acceleration.z * dt * dt;
+    
+    // Track maximum height
+    if (state.position.y > state.maxHeight) {
+      state.maxHeight = state.position.y;
+    }
+    
+    // Track maximum range (horizontal distance from origin)
+    const horizontalRange = Math.sqrt(state.position.x * state.position.x + state.position.z * state.position.z);
+    if (horizontalRange > state.maxRange) {
+      state.maxRange = horizontalRange;
+    }
+    
+    // Check if projectile has hit the ground
+    if (state.position.y <= 0) {
+      state.position.y = 0;
+      state.isRunning = false;
+      
+      // Log landing statistics
+      if (params.debugInfo) {
+        console.log("Projectile landed!");
+        console.log("Time of flight:", state.time.toFixed(2), "seconds");
+        console.log("Range:", state.maxRange.toFixed(2), "meters");
+        console.log("Maximum height:", state.maxHeight.toFixed(2), "meters");
+      }
+    }
+    
+    // Update projectile position
+    projectile.position.copy(state.position);
+    
+    // Update vector arrows
+    if (params.showVectors) {
+      // Scale vectors for visibility
+      const velocityScale = 0.3;
+      const accelerationScale = 0.3;
+      
+      updateArrow(
+        velocityArrow,
+        state.position,
+        state.velocity.clone().normalize(),
+        state.velocity.length() * velocityScale
+      );
+      
+      updateArrow(
+        accelerationArrow,
+        state.position,
+        state.acceleration.clone().normalize(),
+        state.acceleration.length() * accelerationScale
+      );
+      
+      velocityArrow.visible = true;
+      accelerationArrow.visible = true;
+    } else {
+      velocityArrow.visible = false;
+      accelerationArrow.visible = false;
+    }
+    
+    // Update data display
+    updateDataDisplay();
+  }
+  
+  // Update data display
+  function updateDataDisplay() {
+    document.getElementById('time-value').textContent = state.time.toFixed(2);
+    document.getElementById('x-value').textContent = state.position.x.toFixed(2);
+    document.getElementById('y-value').textContent = state.position.y.toFixed(2);
+    document.getElementById('z-value').textContent = state.position.z.toFixed(2);
+    document.getElementById('velocity-value').textContent = state.velocity.length().toFixed(2);
+    document.getElementById('height-value').textContent = state.position.y.toFixed(2);
+    document.getElementById('range-value').textContent = 
+      Math.sqrt(state.position.x * state.position.x + state.position.z * state.position.z).toFixed(2);
+    document.getElementById('max-height-value').textContent = state.maxHeight.toFixed(2);
+    document.getElementById('max-range-value').textContent = state.maxRange.toFixed(2);
+  }
+  
+  // Animation loop
+  function animate() {
+    requestAnimationFrame(animate);
+    
+    // Update orbit controls
+    controls.update();
+    
+    // Update physics if simulation is running
+    if (state.isRunning) {
+      updatePhysics(params.timeStep);
+    }
+    
+    // Render scene
+    renderer.render(scene, camera);
+  }
+  
+  // Handle window resize
+  function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  
+  // Setup GUI controls
+  function setupGUI() {
+    const gui = new dat.GUI();
+    gui.width = 300;
+    
+    // Launch parameters folder
+    const launchFolder = gui.addFolder('Launch Parameters');
+    launchFolder.add(params, 'initialVelocity', 1, 50).name('Initial Velocity (m/s)').onChange(resetSimulation);
+    launchFolder.add(params, 'horizontalAngle', 0, 360).name('Horizontal Angle (°)').onChange(resetSimulation);
+    launchFolder.add(params, 'verticalAngle', 0, 90).name('Vertical Angle (°)').onChange(resetSimulation);
+    launchFolder.add(params, 'launchHeight', 0, 10).name('Launch Height (m)').onChange(resetSimulation);
+    launchFolder.open();
+    
+    // Environment parameters folder
+    const envFolder = gui.addFolder('Environment');
+    envFolder.add(params, 'gravity', 0.1, 30).name('Gravity (m/s²)').onChange(resetSimulation);
+    envFolder.add(params, 'airResistance', 0, 0.1).name('Air Resistance').onChange(resetSimulation);
+    envFolder.open();
+    
+    // Visualization folder
+    const visFolder = gui.addFolder('Visualization');
+    visFolder.add(params, 'showTrajectory').name('Show Trajectory').onChange(function(value) {
+      trajectory.visible = value;
+    });
+    visFolder.add(params, 'showVectors').name('Show Vectors').onChange(function(value) {
+      velocityArrow.visible = value && state.isRunning;
+      accelerationArrow.visible = value && state.isRunning;
+    });
+    visFolder.add(params, 'showTimeMarkers').name('Show Time Markers').onChange(resetSimulation);
+    visFolder.add(params, 'timeMarkerInterval', 0.1, 1).name('Marker Interval (s)').onChange(resetSimulation);
+    visFolder.add(params, 'showTheoreticalValues').name('Show Theoretical').onChange(updateTheoreticalValues);
+    visFolder.open();
+    
+    // Simulation controls folder
+    const simFolder = gui.addFolder('Simulation');
+    simFolder.add(params, 'simulationSpeed', 0.1, 5).name('Simulation Speed');
+    simFolder.add({ start: startSimulation }, 'start').name('Start Simulation');
+    simFolder.add({ pause: pauseSimulation }, 'pause').name('Pause Simulation');
+    simFolder.add({ reset: resetSimulation }, 'reset').name('Reset Simulation');
+    simFolder.open();
+    
+    return gui;
+  }
+  
+  // Start the simulation
+  function startSimulation() {
+    if (!state.hasLaunched) {
+      state.hasLaunched = true;
+      state.isRunning = true;
+      
+      // Update tab display to show controls
+      document.querySelectorAll('.tabcontent').forEach(tab => {
+        tab.style.display = 'none';
+      });
+      document.getElementById('Controls').style.display = 'block';
+      
+      // Update tab buttons
+      document.querySelectorAll('.tablinks').forEach(button => {
+        button.classList.remove('active');
+      });
+      document.querySelector('.tablinks[onclick="openTab(event, \'Controls\')"]').classList.add('active');
+    } else if (!state.isRunning) {
+      state.isRunning = true;
+    }
+  }
+  
+  // Pause the simulation
+  function pauseSimulation() {
+    if (state.isRunning) {
+      state.isRunning = false;
+    }
+  }
+  
+  // Reset the simulation
+  function resetSimulation() {
+    state.hasLaunched = false;
+    state.isRunning = false;
+    
+    calculateInitialConditions();
+    
+    // Hide vector arrows until simulation starts
+    velocityArrow.visible = false;
+    accelerationArrow.visible = false;
+    
+    // Reset data display
+    updateDataDisplay();
+  }
+  
+  // Tab functionality
+  function openTab(evt, tabName) {
+    const tabcontent = document.getElementsByClassName("tabcontent");
+    for (let i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
+    }
+    
+    const tablinks = document.getElementsByClassName("tablinks");
+    for (let i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+  }
+  
+  // Initialize when window loads
+  window.onload = init;
+</script>
+
+</body>
+</html>

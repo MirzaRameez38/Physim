@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Electromagnetic Spectrum Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', Arial, sans-serif;
+            overflow-x: hidden;
+            background-color: #121212;
+            color: #f5f5f5;
+        }
+        
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+        }
+        
+        canvas {
+            display: block;
+        }
+        
+        .content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4fc3f7;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 10;
+        }
+        
+        .wave-selector {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .wave-btn {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #2c3e50;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .wave-btn:hover {
+            background-color: #3498db;
+        }
+        
+        .wave-btn.active {
+            background-color: #e74c3c;
+        }
+        
+        .info-panel {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .property {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        
+        .property-name {
+            font-weight: bold;
+            width: 200px;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-top: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #2c3e50;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .tab.active {
+            background-color: #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 0 5px 5px 5px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .penetration-demo {
+            height: 200px;
+            background-color: #2c3e50;
+            position: relative;
+            overflow: hidden;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .material-layer {
+            position: absolute;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .penetration-ray {
+            position: absolute;
+            height: 5px;
+            background-color: #e74c3c;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 0;
+            transition: width 1s;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Interactive Electromagnetic Spectrum Simulation</h1>
+        
+        <div id="canvas-container">
+            <!-- 3D visualization will be rendered here -->
+            <div class="controls">
+                <label for="wave-speed">Wave Speed:</label>
+                <input type="range" id="wave-speed" min="1" max="10" value="5">
+                <label for="amplitude">Amplitude:</label>
+                <input type="range" id="amplitude" min="1" max="10" value="5">
+            </div>
+        </div>
+        
+        <div class="wave-selector">
+            <button class="wave-btn active" data-wave="radio">Radio Waves</button>
+            <button class="wave-btn" data-wave="microwave">Microwaves</button>
+            <button class="wave-btn" data-wave="infrared">Infrared</button>
+            <button class="wave-btn" data-wave="visible">Visible Light</button>
+            <button class="wave-btn" data-wave="ultraviolet">Ultraviolet</button>
+            <button class="wave-btn" data-wave="xray">X-Rays</button>
+            <button class="wave-btn" data-wave="gamma">Gamma Rays</button>
+        </div>
+        
+        <div class="info-panel">
+            <h2 id="selected-wave-title">Radio Waves</h2>
+            
+            <div class="property">
+                <div class="property-name">Wavelength Range:</div>
+                <div id="wavelength">1 mm - 100 km</div>
+            </div>
+            <div class="property">
+                <div class="property-name">Frequency Range:</div>
+                <div id="frequency">3 kHz - 300 GHz</div>
+            </div>
+            <div class="property">
+                <div class="property-name">Energy Level:</div>
+                <div id="energy">Very Low</div>
+            </div>
+            <div class="property">
+                <div class="property-name">Penetration Power:</div>
+                <div id="penetration">Medium (Can pass through walls, buildings)</div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="overview">Overview</div>
+                <div class="tab" data-tab="learning">Learning Outcomes</div>
+                <div class="tab" data-tab="applications">Real-World Applications</div>
+            </div>
+            
+            <div class="tab-content active" id="overview">
+                <p>Radio waves are electromagnetic waves with the longest wavelengths in the electromagnetic spectrum. They are generated by oscillating currents in conductive materials like antennas [[4]]. Radio waves travel at the speed of light in a vacuum but can be reflected, refracted, and absorbed by different materials [[1]].</p>
+                <p>These waves can penetrate non-conducting materials like wood, plastic, and drywall, but are reflected or absorbed by conductive materials like metals. The penetrating ability depends on their wavelength and the properties of the material they encounter.</p>
+            </div>
+            
+            <div class="tab-content" id="learning">
+                <h4>After exploring this simulation, you will be able to:</h4>
+                <ul>
+                    <li>Identify the different regions of the electromagnetic spectrum</li>
+                    <li>Understand the relationship between wavelength, frequency, and energy</li>
+                    <li>Compare penetration capabilities of different electromagnetic waves</li>
+                    <li>Explain how electromagnetic waves interact with matter</li>
+                    <li>Connect wave properties to real-world applications</li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="applications">
+                <h4>Radio Waves Applications:</h4>
+                <ul>
+                    <li>AM/FM radio broadcasting</li>
+                    <li>Television signal transmission</li>
+                    <li>Mobile phone communications</li>
+                    <li>Radar technology</li>
+                    <li>Satellite communications</li>
+                    <li>WiFi and Bluetooth technology</li>
+                </ul>
+            </div>
+            
+            <h3>Penetration Demonstration</h3>
+            <div class="penetration-demo">
+                <div class="material-layer" style="width: 25%; left: 0%; background-color: #3498db;">Air</div>
+                <div class="material-layer" style="width: 25%; left: 25%; background-color: #2ecc71;">Wood</div>
+                <div class="material-layer" style="width: 25%; left: 50%; background-color: #f39c12;">Concrete</div>
+                <div class="material-layer" style="width: 25%; left: 75%; background-color: #95a5a6;">Metal</div>
+                <div class="penetration-ray" style="width: 85%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <script>
+        // EM Spectrum Wave Data
+        const wavesData = {
+            radio: {
+                title: "Radio Waves",
+                wavelength: "1 mm - 100 km",
+                frequency: "3 kHz - 300 GHz",
+                energy: "Very Low",
+                penetration: "High (Can pass through walls, buildings)",
+                color: 0xff0000, // red
+                penetrationLevel: 85,
+                overview: "Radio waves are electromagnetic waves with the longest wavelengths in the electromagnetic spectrum. They are generated by oscillating currents in conductive materials like antennas [[4]]. Radio waves travel at the speed of light in a vacuum but can be reflected, refracted, and absorbed by different materials [[1]].",
+                learning: "<h4>After exploring this simulation, you will be able to:</h4><ul><li>Identify radio wave characteristics</li><li>Understand how radio waves propagate through materials</li><li>Explain how antennas transmit and receive radio signals</li><li>Analyze the principles behind radio communications</li></ul>",
+                applications: "<h4>Radio Waves Applications:</h4><ul><li>AM/FM radio broadcasting</li><li>Television signal transmission</li><li>Mobile phone communications</li><li>Radar technology</li><li>Satellite communications</li><li>WiFi and Bluetooth technology</li></ul>"
+            },
+            microwave: {
+                title: "Microwaves",
+                wavelength: "1 mm - 30 cm",
+                frequency: "1 GHz - 300 GHz",
+                energy: "Low",
+                penetration: "Medium (Can penetrate thin non-metallic materials)",
+                color: 0xff7700, // orange
+                penetrationLevel: 70,
+                overview: "Microwaves are electromagnetic waves with wavelengths ranging from one millimeter to 30 centimeters. They occupy the portion of the electromagnetic spectrum between radio waves and infrared light [[4]]. Microwaves can penetrate thin materials but are absorbed by water molecules, which is the principle behind microwave ovens.",
+                learning: "<h4>After exploring this simulation, you will be able to:</h4><ul><li>Describe the characteristics of microwaves</li><li>Explain how microwaves interact with water molecules</li><li>Understand microwave transmission principles</li><li>Analyze why microwaves are used in specific applications</li></ul>",
+                applications: "<h4>Microwave Applications:</h4><ul><li>Microwave ovens for cooking</li><li>Radar systems for weather forecasting</li><li>Satellite communications</li><li>Wireless networks (WiFi)</li><li>Remote sensing</li><li>Medical diathermy treatments</li></ul>"
+            },
+            infrared: {
+                title: "Infrared",
+                wavelength: "700 nm - 1 mm",
+                frequency: "300 GHz - 430 THz",
+                energy: "Medium-Low",
+                penetration: "Low (Absorbed by most materials as heat)",
+                color: 0xffff00, // yellow
+                penetrationLevel: 50,
+                overview: "Infrared radiation is electromagnetic radiation with wavelengths longer than those of visible light and shorter than microwaves. Infrared radiation is emitted by all objects with a temperature above absolute zero and is experienced as heat [[4]]. It's divided into near, mid, and far-infrared regions.",
+                learning: "<h4>After exploring this simulation, you will be able to:</h4><ul><li>Identify sources of infrared radiation</li><li>Understand how infrared radiation transfers heat</li><li>Explain the principles of thermal imaging</li><li>Analyze how infrared interacts with different materials</li></ul>",
+                applications: "<h4>Infrared Applications:</h4><ul><li>Thermal imaging cameras</li><li>Remote controls</li><li>Infrared heating</li><li>Night vision equipment</li><li>Spectroscopy for chemical analysis</li><li>Astronomy for observing celestial objects</li></ul>"
+            },
+            visible: {
+                title: "Visible Light",
+                wavelength: "380 nm - 700 nm",
+                frequency: "430 THz - 790 THz",
+                energy: "Medium",
+                penetration: "Very Low (Cannot penetrate opaque materials)",
+                color: 0x00ff00, // green
+                penetrationLevel: 30,
+                overview: "Visible light is the portion of the electromagnetic spectrum that can be detected by the human eye. It ranges from violet (shortest wavelength) to red (longest wavelength) [[4]]. Visible light interacts with matter in various ways including reflection, refraction, absorption, and scattering, which gives objects their color.",
+                learning: "<h4>After exploring this simulation, you will be able to:</h4><ul><li>Identify the color spectrum of visible light</li><li>Understand how light interacts with different materials</li><li>Explain the principles of color perception</li><li>Analyze how prisms separate light into component colors</li></ul>",
+                applications: "<h4>Visible Light Applications:</h4><ul><li>Photography and imaging</li><li>Fiber optic communications</li><li>Lighting technology</li><li>Solar energy harvesting</li><li>Microscopy</li><li>Holography</li></ul>"
+            },
+            ultraviolet: {
+                title: "Ultraviolet",
+                wavelength: "10 nm - 380 nm",
+                frequency: "790 THz - 30 PHz",
+                energy: "Medium-High",
+                penetration: "Very Low (Only penetrates outer skin layers)",
+                color: 0x0000ff, // blue
+                penetrationLevel: 20,
+                overview: "Ultraviolet (UV) radiation has wavelengths shorter than visible light but longer than X-rays. It's divided into UV-A, UV-B, and UV-C based on wavelength [[4]]. UV radiation from the sun causes sunburns and can damage DNA, but is also essential for vitamin D synthesis in humans.",
+                learning: "<h4>After exploring this simulation, you will be able to:</h4><ul><li>Differentiate between UV-A, UV-B, and UV-C radiation</li><li>Understand how UV radiation affects biological tissues</li><li>Explain the principles behind UV sterilization</li><li>Analyze the relationship between UV exposure and health risks</li></ul>",
+                applications: "<h4>Ultraviolet Applications:</h4><ul><li>Sterilization and disinfection</li><li>Black lights for security features</li><li>UV curing of materials</li><li>Forensic analysis</li><li>Astronomy observations</li><li>Medical treatments (phototherapy)</li></ul>"
+            },
+            xray: {
+                title: "X-Rays",
+                wavelength: "0.01 nm - 10 nm",
+                frequency: "30 PHz - 30 EHz",
+                energy: "High",
+                penetration: "High (Can penetrate soft tissue but not bone)",
+                color: 0x8800ff, // purple
+                penetrationLevel: 60,
+                overview: "X-rays are high-energy electromagnetic waves with wavelengths shorter than ultraviolet light but longer than gamma rays [[4]]. They can penetrate soft tissues but are absorbed by denser materials like bone, which makes them useful for medical imaging. X-rays are produced when high-energy electrons strike a metal target.",
+                learning: "<h4>After exploring this simulation, you will be able to:</h4><ul><li>Understand how X-rays are generated</li><li>Explain why X-rays penetrate some materials but not others</li><li>Analyze the principles behind medical X-ray imaging</li><li>Evaluate radiation safety concerns associated with X-rays</li></ul>",
+                applications: "<h4>X-Ray Applications:</h4><ul><li>Medical radiography</li><li>Airport security scanners</li><li>Material analysis and testing</li><li>Crystallography</li><li>Astronomy (observing high-energy phenomena)</li><li>Industrial inspection for defects</li></ul>"
+            },
+            gamma: {
+                title: "Gamma Rays",
+                wavelength: "Less than 0.01 nm",
+                frequency: "More than 30 EHz",
+                energy: "Very High",
+                penetration: "Extremely High (Can penetrate thick materials including metal)",
+                color: 0xff00ff, // magenta
+                penetrationLevel: 100,
+                overview: "Gamma rays are the most energetic form of electromagnetic radiation, with the shortest wavelengths and highest frequencies [[4]]. They are produced by nuclear processes such as radioactive decay. Due to their high energy, gamma rays can penetrate most materials and cause ionization, which can damage living tissues.",
+                learning: "<h4>After exploring this simulation, you will be able to:</h4><ul><li>Identify sources of gamma radiation</li><li>Understand how gamma rays interact with matter</li><li>Explain the principles of gamma ray detection</li><li>Analyze the health risks and protective measures associated with gamma radiation</li></ul>",
+                applications: "<h4>Gamma Ray Applications:</h4><ul><li>Cancer treatment (radiation therapy)</li><li>Food irradiation for preservation</li><li>Sterilization of medical equipment</li><li>Industrial gauging and thickness measurement</li><li>Nuclear medicine imaging</li><li>Astrophysics research</li></ul>"
+            }
+        };
+
+        // Set up the 3D scene
+        let scene, camera, renderer, waveGroup, controls;
+        let currentWave = "radio";
+        let waveSpeed = 0.05;
+        let waveAmplitude = 1;
+        
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x121212);
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / (window.innerHeight * 0.6), 0.1, 1000);
+            camera.position.set(0, 5, 10);
+            
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
+            // Add orbit controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.1;
+            
+            // Add ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            // Add directional light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 10);
+            scene.add(directionalLight);
+            
+            // Create wave group
+            waveGroup = new THREE.Group();
+            scene.add(waveGroup);
+            
+            // Create electromagnetic wave visualization
+            createWave(wavesData[currentWave].color);
+            
+            // Create coordinate axes helper
+            const axesHelper = new THREE.AxesHelper(5);
+            scene.add(axesHelper);
+            
+            // Add materials to demonstrate penetration
+            createPenetrationMaterials();
+            
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+            
+            // Set up controls
+            document.getElementById('wave-speed').addEventListener('input', function(e) {
+                waveSpeed = e.target.value * 0.01;
+            });
+            
+            document.getElementById('amplitude').addEventListener('input', function(e) {
+                waveAmplitude = e.target.value * 0.2;
+                updateWave();
+            });
+            
+            // Set up wave selection buttons
+            const waveButtons = document.querySelectorAll('.wave-btn');
+            waveButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    waveButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    currentWave = this.dataset.wave;
+                    updateWaveInfo();
+                    updateWave();
+                });
+            });
+            
+            // Set up tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(this.dataset.tab).classList.add('active');
+                });
+            });
+            
+            // Initialize wave information
+            updateWaveInfo();
+            
+            // Start animation loop
+            animate();
+        }
+        
+        function createWave(color) {
+            // Clear existing wave
+            while(waveGroup.children.length > 0) {
+                waveGroup.remove(waveGroup.children[0]);
+            }
+            
+            // Create electric field vectors (green)
+            const electricFieldGroup = new THREE.Group();
+            for(let x = -5; x <= 5; x += 0.5) {
+                const arrowHelper = new THREE.ArrowHelper(
+                    new THREE.Vector3(0, 1, 0),
+                    new THREE.Vector3(x, 0, 0),
+                    1,
+                    0x00ff00,
+                    0.2,
+                    0.1
+                );
+                electricFieldGroup.add(arrowHelper);
+            }
+            waveGroup.add(electricFieldGroup);
+            
+            // Create magnetic field vectors (red)
+            const magneticFieldGroup = new THREE.Group();
+            for(let x = -5; x <= 5; x += 0.5) {
+                const arrowHelper = new THREE.ArrowHelper(
+                    new THREE.Vector3(0, 0, 1),
+                    new THREE.Vector3(x, 0, 0),
+                    1,
+                    0xff0000,
+                    0.2,
+                    0.1
+                );
+                magneticFieldGroup.add(arrowHelper);
+            }
+            waveGroup.add(magneticFieldGroup);
+            
+            // Create wave path
+            const waveGeometry = new THREE.BufferGeometry();
+            const wavePositions = [];
+            for(let x = -5; x <= 5; x += 0.1) {
+                wavePositions.push(x, 0, 0);
+            }
+            waveGeometry.setAttribute('position', new THREE.Float32BufferAttribute(wavePositions, 3));
+            
+            const waveMaterial = new THREE.LineBasicMaterial({ color: color });
+            const waveLine = new THREE.Line(waveGeometry, waveMaterial);
+            waveGroup.add(waveLine);
+        }
+        
+        function createPenetrationMaterials() {
+            // Create materials to demonstrate penetration
+            const boxGeometry = new THREE.BoxGeometry(2, 2, 0.2);
+            
+            // Air (transparent)
+            const airMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x3498db, 
+                transparent: true, 
+                opacity: 0.2 
+            });
+            const airBox = new THREE.Mesh(boxGeometry, airMaterial);
+            airBox.position.set(-3, 0, 0);
+            scene.add(airBox);
+            
+            // Wood (semi-transparent)
+            const woodMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x2ecc71, 
+                transparent: true, 
+                opacity: 0.5 
+            });
+            const woodBox = new THREE.Mesh(boxGeometry, woodMaterial);
+            woodBox.position.set(-1, 0, 0);
+            scene.add(woodBox);
+            
+            // Concrete (less transparent)
+            const concreteMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xf39c12, 
+                transparent: true, 
+                opacity: 0.7 
+            });
+            const concreteBox = new THREE.Mesh(boxGeometry, concreteMaterial);
+            concreteBox.position.set(1, 0, 0);
+            scene.add(concreteBox);
+            
+            // Metal (opaque)
+            const metalMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x95a5a6
+            });
+            const metalBox = new THREE.Mesh(boxGeometry, metalMaterial);
+            metalBox.position.set(3, 0, 0);
+            scene.add(metalBox);
+        }
+        
+        function updateWave() {
+            // Update wave color and properties
+            createWave(wavesData[currentWave].color);
+            
+            // Update penetration demonstration
+            document.querySelector('.penetration-ray').style.width = wavesData[currentWave].penetrationLevel + '%';
+        }
+        
+        function updateWaveInfo() {
+            const data = wavesData[currentWave];
+            document.getElementById('selected-wave-title').textContent = data.title;
+            document.getElementById('wavelength').textContent = data.wavelength;
+            document.getElementById('frequency').textContent = data.frequency;
+            document.getElementById('energy').textContent = data.energy;
+            document.getElementById('penetration').textContent = data.penetration;
+            document.getElementById('overview').innerHTML = data.overview;
+            document.getElementById('learning').innerHTML = data.learning;
+            document.getElementById('applications').innerHTML = data.applications;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Update controls
+            controls.update();
+            
+            // Animate the wave
+            const time = Date.now() * 0.001;
+            if(waveGroup.children.length >= 3) {
+                // Update electric field vectors
+                const electricFieldVectors = waveGroup.children[0].children;
+                for(let i = 0; i < electricFieldVectors.length; i++) {
+                    const x = electricFieldVectors[i].position.x;
+                    const y = Math.sin(x + time * waveSpeed * 5) * waveAmplitude;
+                    electricFieldVectors[i].setDirection(new THREE.Vector3(0, y > 0 ? 1 : -1, 0));
+                    electricFieldVectors[i].setLength(Math.abs(y));
+                }
+                
+                // Update magnetic field vectors
+                const magneticFieldVectors = waveGroup.children[1].children;
+                for(let i = 0; i < magneticFieldVectors.length; i++) {
+                    const x = magneticFieldVectors[i].position.x;
+                    const z = Math.cos(x + time * waveSpeed * 5) * waveAmplitude;
+                    magneticFieldVectors[i].setDirection(new THREE.Vector3(0, 0, z > 0 ? 1 : -1));
+                    magneticFieldVectors[i].setLength(Math.abs(z));
+                }
+                
+                // Update wave path
+                const waveLine = waveGroup.children[2];
+                const positions = waveLine.geometry.attributes.position.array;
+                for(let i = 0; i < positions.length; i += 3) {
+                    const x = positions[i];
+                    positions[i + 1] = Math.sin(x + time * waveSpeed * 5) * waveAmplitude;
+                }
+                waveLine.geometry.attributes.position.needsUpdate = true;
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / (window.innerHeight * 0.6);
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
+        }
+        
+        // Initialize the scene
+        init();
+    </script>
+</body>
+</html>

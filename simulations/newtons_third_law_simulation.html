@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newton's Third Law - Physics Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100vh;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            max-width: 350px;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        .slider-container {
+            margin: 10px 0;
+        }
+        button {
+            padding: 8px 12px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+        .force-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 5px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 5px;
+        }
+        .force-arrow {
+            width: 50px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div id="info">
+        <h1>Newton's Third Law of Motion</h1>
+        <p><strong>For every action, there is an equal and opposite reaction.</strong></p>
+        <p>When objects collide, they exert equal and opposite forces on each other.</p>
+        
+        <div class="force-info">
+            <div class="force-arrow" style="color: #ff0000;">⟸</div>
+            <div>Force on Red Cube: <span id="collision-force1">0.00</span> N</div>
+        </div>
+        <div class="force-info">
+            <div class="force-arrow" style="color: #0000ff;">⟹</div>
+            <div>Force on Blue Cube: <span id="collision-force2">0.00</span> N</div>
+        </div>
+        
+        <div id="momentum-info">
+            <div>Total Momentum Before: <span id="momentum-before">0.00</span> kg·m/s</div>
+            <div>Total Momentum After: <span id="momentum-after">0.00</span> kg·m/s</div>
+        </div>
+    </div>
+    
+    <div id="controls">
+        <div class="slider-container">
+            <label for="cube1-mass">Red Cube Mass (kg):</label>
+            <input type="range" id="cube1-mass" min="1" max="10" value="2" step="0.1">
+            <span id="cube1-mass-value">2.0</span>
+        </div>
+        
+        <div class="slider-container">
+            <label for="cube2-mass">Blue Cube Mass (kg):</label>
+            <input type="range" id="cube2-mass" min="1" max="10" value="2" step="0.1">
+            <span id="cube2-mass-value">2.0</span>
+        </div>
+        
+        <div class="slider-container">
+            <label for="collision-velocity">Collision Speed (m/s):</label>
+            <input type="range" id="collision-velocity" min="1" max="10" value="5" step="0.1">
+            <span id="collision-velocity-value">5.0</span>
+        </div>
+        
+        <button id="collision-start">Start Collision</button>
+        <button id="reset">Reset Simulation</button>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Initialize Three.js scene
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+        
+        // Create camera
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 20);
+        camera.lookAt(0, 0, 0);
+        
+        // Create renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+        
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0x404040, 1);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 7.5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.camera.left = -15;
+        directionalLight.shadow.camera.right = 15;
+        directionalLight.shadow.camera.top = 15;
+        directionalLight.shadow.camera.bottom = -5;
+        scene.add(directionalLight);
+        
+        // Create ground
+        const groundGeometry = new THREE.PlaneGeometry(50, 20);
+        const groundMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x559955,
+            roughness: 0.8,
+            metalness: 0.2
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+        
+        // Create track for objects
+        const trackGeometry = new THREE.BoxGeometry(30, 0.1, 5);
+        const trackMaterial = new THREE.MeshStandardMaterial({
+            color: 0x8888ff,
+            roughness: 0.5,
+            metalness: 0.2
+        });
+        const track = new THREE.Mesh(trackGeometry, trackMaterial);
+        track.position.y = 0;
+        track.receiveShadow = true;
+        scene.add(track);
+        
+        // Create distance markers
+        for (let i = -10; i <= 10; i += 2) {
+            if (i === 0) continue;
+            
+            // Create marker
+            const markerGeometry = new THREE.BoxGeometry(0.1, 0.2, 1);
+            const markerMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+            marker.position.set(i, 0.05, 0);
+            scene.add(marker);
+            
+            // Create text label
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 64;
+            canvas.height = 32;
+            context.font = '24px Arial';
+            context.fillStyle = 'black';
+            context.textAlign = 'center';
+            context.fillText(`${i}m`, 32, 24);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.position.set(i, 0.4, 0);
+            sprite.scale.set(1, 0.5, 1);
+            scene.add(sprite);
+        }
+        
+        // Create cubes for collision
+        const cubeSize = 1;
+        const cube1Geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+        const cube1Material = new THREE.MeshStandardMaterial({
+            color: 0xff0000,
+            roughness: 0.4,
+            metalness: 0.6
+        });
+        const cube1 = new THREE.Mesh(cube1Geometry, cube1Material);
+        cube1.position.set(-5, 0.5, 0);
+        cube1.castShadow = true;
+        cube1.receiveShadow = true;
+        scene.add(cube1);
+        
+        const cube2Geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+        const cube2Material = new THREE.MeshStandardMaterial({
+            color: 0x0000ff,
+            roughness: 0.4,
+            metalness: 0.6
+        });
+        const cube2 = new THREE.Mesh(cube2Geometry, cube2Material);
+        cube2.position.set(5, 0.5, 0);
+        cube2.castShadow = true;
+        cube2.receiveShadow = true;
+        scene.add(cube2);
+        
+        // Create force arrows for collision
+        const arrowLength = 2;
+        const arrowHeadLength = 0.5;
+        const arrowHeadWidth = 0.3;
+        
+        // Arrow for cube1
+        const arrow1Direction = new THREE.Vector3(-1, 0, 0);
+        const arrow1 = new THREE.ArrowHelper(
+            arrow1Direction, 
+            new THREE.Vector3(cube1.position.x + 1, cube1.position.y, cube1.position.z),
+            arrowLength,
+            0xff0000,
+            arrowHeadLength,
+            arrowHeadWidth
+        );
+        arrow1.visible = false;
+        scene.add(arrow1);
+        
+        // Arrow for cube2
+        const arrow2Direction = new THREE.Vector3(1, 0, 0);
+        const arrow2 = new THREE.ArrowHelper(
+            arrow2Direction, 
+            new THREE.Vector3(cube2.position.x - 1, cube2.position.y, cube2.position.z),
+            arrowLength,
+            0x0000ff,
+            arrowHeadLength,
+            arrowHeadWidth
+        );
+        arrow2.visible = false;
+        scene.add(arrow2);
+        
+        // Add velocity vectors
+        const vel1Direction = new THREE.Vector3(1, 0, 0);
+        const vel1 = new THREE.ArrowHelper(
+            vel1Direction,
+            new THREE.Vector3(cube1.position.x, cube1.position.y + 1.2, cube1.position.z),
+            2,
+            0xff6600,
+            0.3,
+            0.2
+        );
+        scene.add(vel1);
+        
+        const vel2Direction = new THREE.Vector3(-1, 0, 0);
+        const vel2 = new THREE.ArrowHelper(
+            vel2Direction,
+            new THREE.Vector3(cube2.position.x, cube2.position.y + 1.2, cube2.position.z),
+            2,
+            0xff6600,
+            0.3,
+            0.2
+        );
+        scene.add(vel2);
+        
+        // Physics variables
+        let cube1Mass = 2;
+        let cube2Mass = 2;
+        let collisionVelocity = 5;
+        let cube1Velocity = 0;
+        let cube2Velocity = 0;
+        let isSimulating = false;
+        let collisionHappened = false;
+        let collisionForce = 0;
+        let initialMomentum = 0;
+        let finalMomentum = 0;
+        
+        let lastTime = performance.now();
+        
+        // UI elements
+        const cube1MassSlider = document.getElementById('cube1-mass');
+        const cube1MassValue = document.getElementById('cube1-mass-value');
+        const cube2MassSlider = document.getElementById('cube2-mass');
+        const cube2MassValue = document.getElementById('cube2-mass-value');
+        const collisionVelocitySlider = document.getElementById('collision-velocity');
+        const collisionVelocityValue = document.getElementById('collision-velocity-value');
+        const collisionStartButton = document.getElementById('collision-start');
+        const resetButton = document.getElementById('reset');
+        
+        const collisionForce1Display = document.getElementById('collision-force1');
+        const collisionForce2Display = document.getElementById('collision-force2');
+        const momentumBeforeDisplay = document.getElementById('momentum-before');
+        const momentumAfterDisplay = document.getElementById('momentum-after');
+        
+        // Event listeners
+        cube1MassSlider.addEventListener('input', () => {
+            cube1Mass = parseFloat(cube1MassSlider.value);
+            cube1MassValue.textContent = cube1Mass.toFixed(1);
+            updateCubeSize(cube1, cube1Mass);
+        });
+        
+        cube2MassSlider.addEventListener('input', () => {
+            cube2Mass = parseFloat(cube2MassSlider.value);
+            cube2MassValue.textContent = cube2Mass.toFixed(1);
+            updateCubeSize(cube2, cube2Mass);
+        });
+        
+        collisionVelocitySlider.addEventListener('input', () => {
+            collisionVelocity = parseFloat(collisionVelocitySlider.value);
+            collisionVelocityValue.textContent = collisionVelocity.toFixed(1);
+            updateVelocityArrows();
+        });
+        
+        collisionStartButton.addEventListener('click', startCollision);
+        resetButton.addEventListener('click', resetSimulation);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Functions
+        function updateCubeSize(cube, mass) {
+            // Scale cube based on mass (1kg = 0.8 size, 10kg = 1.5 size)
+            const scale = 0.8 + (mass / 10) * 0.7;
+            cube.scale.set(scale, scale, scale);
+        }
+        
+        function updateVelocityArrows() {
+            vel1.setLength(collisionVelocity * 0.4);
+            vel2.setLength(collisionVelocity * 0.4);
+        }
+        
+        function startCollision() {
+            if (!isSimulating) {
+                isSimulating = true;
+                collisionHappened = false;
+                
+                // Reset positions
+                cube1.position.set(-5, 0.5, 0);
+                cube2.position.set(5, 0.5, 0);
+                
+                // Set initial velocities
+                cube1Velocity = collisionVelocity;
+                cube2Velocity = -collisionVelocity;
+                
+                // Calculate initial momentum
+                initialMomentum = cube1Mass * cube1Velocity + cube2Mass * cube2Velocity;
+                momentumBeforeDisplay.textContent = Math.abs(initialMomentum).toFixed(2);
+                momentumAfterDisplay.textContent = "0.00";
+                
+                // Update velocity arrows
+                updateVelocityArrows();
+                vel1.position.set(cube1.position.x, cube1.position.y + 1.2, cube1.position.z);
+                vel2.position.set(cube2.position.x, cube2.position.y + 1.2, cube2.position.z);
+                
+                // Hide force arrows initially
+                arrow1.visible = false;
+                arrow2.visible = false;
+                
+                collisionStartButton.textContent = "Restart Collision";
+            } else {
+                resetSimulation();
+                startCollision();
+            }
+        }
+        
+        function resetSimulation() {
+            isSimulating = false;
+            
+            // Reset positions
+            cube1.position.set(-5, 0.5, 0);
+            cube2.position.set(5, 0.5, 0);
+            
+            // Reset velocities
+            cube1Velocity = 0;
+            cube2Velocity = 0;
+            
+            // Update velocity arrows
+            vel1.setLength(0.01); // Almost invisible but not zero
+            vel2.setLength(0.01); // Almost invisible but not zero
+            vel1.position.set(cube1.position.x, cube1.position.y + 1.2, cube1.position.z);
+            vel2.position.set(cube2.position.x, cube2.position.y + 1.2, cube2.position.z);
+            
+            // Hide force arrows
+            arrow1.visible = false;
+            arrow2.visible = false;
+            
+            // Reset force displays
+            collisionForce1Display.textContent = "0.00";
+            collisionForce2Display.textContent = "0.00";
+            momentumBeforeDisplay.textContent = "0.00";
+            momentumAfterDisplay.textContent = "0.00";
+            
+            collisionStartButton.textContent = "Start Collision";
+        }
+        
+        function updatePhysics(deltaTime) {
+            if (!isSimulating) return;
+            
+            // Update positions based on velocities
+            cube1.position.x += cube1Velocity * deltaTime;
+            cube2.position.x += cube2Velocity * deltaTime;
+            
+            // Update velocity arrows
+            vel1.position.set(cube1.position.x, cube1.position.y + 1.2, cube1.position.z);
+            if (cube1Velocity >= 0) {
+                vel1.setDirection(new THREE.Vector3(1, 0, 0));
+            } else {
+                vel1.setDirection(new THREE.Vector3(-1, 0, 0));
+            }
+            vel1.setLength(Math.abs(cube1Velocity) * 0.4);
+            
+            vel2.position.set(cube2.position.x, cube2.position.y + 1.2, cube2.position.z);
+            if (cube2Velocity >= 0) {
+                vel2.setDirection(new THREE.Vector3(1, 0, 0));
+            } else {
+                vel2.setDirection(new THREE.Vector3(-1, 0, 0));
+            }
+            vel2.setLength(Math.abs(cube2Velocity) * 0.4);
+            
+            // Check for collision
+            const cube1Right = cube1.position.x + (cube1.scale.x * 0.5);
+            const cube2Left = cube2.position.x - (cube2.scale.x * 0.5);
+            
+            if (cube1Right >= cube2Left && !collisionHappened) {
+                collisionHappened = true;
+                
+                // Calculate impulse and change in velocity
+                const restitution = 0.8; // 0.8 = somewhat elastic collision
+                
+                // Calculate collision force (as impulse over small time interval)
+                const collisionTime = 0.1; // seconds, simulated contact time
+                const relativeVelocity = Math.abs(cube1Velocity - cube2Velocity);
+                
+                // Simplified impulse calculation
+                const totalMass = cube1Mass + cube2Mass;
+                const impulse = (1 + restitution) * (cube1Mass * cube2Mass / totalMass) * relativeVelocity;
+                
+                // Force = impulse / time
+                collisionForce = impulse / collisionTime;
+                
+                // Calculate new velocities
+                const v1Final = ((cube1Mass - cube2Mass) * cube1Velocity + 2 * cube2Mass * cube2Velocity) / totalMass * restitution;
+                const v2Final = ((cube2Mass - cube1Mass) * cube2Velocity + 2 * cube1Mass * cube1Velocity) / totalMass * restitution;
+                
+                cube1Velocity = v1Final;
+                cube2Velocity = v2Final;
+                
+                // Calculate momentum after collision
+                finalMomentum = cube1Mass * cube1Velocity + cube2Mass * cube2Velocity;
+                momentumAfterDisplay.textContent = Math.abs(finalMomentum).toFixed(2);
+                
+                // Position correction to prevent overlap
+                const overlap = cube1Right - cube2Left;
+                cube1.position.x -= overlap / 2;
+                cube2.position.x += overlap / 2;
+                
+                // Show force arrows
+                arrow1.position.set(cube1.position.x + cube1.scale.x * 0.5, cube1.position.y, cube1.position.z);
+                arrow2.position.set(cube2.position.x - cube2.scale.x * 0.5, cube2.position.y, cube2.position.z);
+                
+                const arrowScale = Math.min(collisionForce / 20, 3);
+                arrow1.setLength(arrowScale);
+                arrow2.setLength(arrowScale);
+                
+                arrow1.visible = true;
+                arrow2.visible = true;
+                
+                // Update display
+                collisionForce1Display.textContent = collisionForce.toFixed(2);
+                collisionForce2Display.textContent = collisionForce.toFixed(2);
+            }
+            
+            // Check if cubes are far off-screen
+            if (Math.abs(cube1.position.x) > 15 || Math.abs(cube2.position.x) > 15) {
+                isSimulating = false;
+                setTimeout(() => {
+                    resetSimulation();
+                    collisionStartButton.textContent = "Start Collision";
+                }, 1000);
+            }
+        }
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const now = performance.now();
+            const deltaTime = Math.min((now - lastTime) / 1000, 0.1); // Convert to seconds, cap at 0.1s
+            lastTime = now;
+            
+            updatePhysics(deltaTime);
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Initialize
+        updateCubeSize(cube1, cube1Mass);
+        updateCubeSize(cube2, cube2Mass);
+        resetSimulation();
+        animate();
+    </script>
+</body>
+</html>

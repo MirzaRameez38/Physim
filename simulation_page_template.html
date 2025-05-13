@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhySim - Simulation</title> <!-- Title will be updated by JS -->
+    <link rel="icon" href="assets/favicon-32x32.png" type="image/png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+</head>
+<body>
+    <header class="app-header">
+       <div class="logo-container">
+            <!-- CORRECTED LOGO IMPLEMENTATION -->
+            <img src="assets/logo.png" alt="PhySim Logo" class="logo-img">
+            <!-- <div class="logo">P</div> REMOVE THIS if using an image logo -->
+        </div>
+        <div class="user-info">
+            <span id="usernameDisplay">User</span>
+            <span class="user-status" id="userStatusBadge">Status</span>
+            <button class="logout-btn" id="logoutButton"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </header>
+
+    <main class="main-content" id="simulationPageContent">
+        <div class="container">
+            <a href="dashboard.html" class="btn btn-outline back-to-dashboard-btn mb-6">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+
+            <div class="simulation-page-card">
+                <div class="simulation-page-card-header">
+                    <div class="header-content">
+                        <i id="simulationPageIcon" class="fas fa-flask w-10 h-10 mr-3 text-primary"></i> <!-- Icon updated by JS -->
+                        <div class="title-block">
+                            <h1 id="simulationPageTitle">Simulation Title</h1>
+                            <p id="simulationPageUnit">Unit Name</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="simulation-page-card-content">
+                    <!-- Actual Simulation Area -->
+                    <div id="simulationActualArea" class="simulation-placeholder-content">
+                        <!-- Simulation specific content injected here or placeholder shown -->
+                         <p class="text-xl font-semibold text-primary">Interactive Simulation Area</p>
+                         <p class="text-muted-foreground">The actual simulation will be embedded here.</p>
+                    </div>
+                    
+                    <!-- Explanation Area -->
+                    <div id="simulationExplanationArea" class="content-section">
+                        <!-- Explanation HTML injected here -->
+                    </div>
+
+                    <!-- AI Tutor Section -->
+                    <div class="alert alert-accent mt-6">
+                        <i class="fas fa-robot"></i>
+                        <div>
+                            <h4 class="alert-title">Explore with AI Tutor</h4>
+                            <div class="alert-description flex-responsive">
+                                <span>Confused about something? Get a personalized explanation from our AI Tutor.</span>
+                                <button id="openAiTutorModalBtn" class="btn btn-ai-tutor">
+                                    <i class="fas fa-comment-dots"></i> Ask AI Tutor
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Premium Learning Tools - For Paid Users -->
+                    <div id="premiumToolsSection" class="premium-tools-card" style="display: none;">
+                        <div class="card-header">
+                            <h4 class="card-title"><i class="fas fa-star"></i> Premium Learning Tools</h4>
+                            <p class="card-description">Enhance your understanding with these exclusive features.</p>
+                        </div>
+                        <div class="card-content">
+                            <button class="btn btn-premium-feature">
+                                <i class="fas fa-question-circle"></i>
+                                <div>
+                                    <p class="feature-title">Interactive Quiz</p>
+                                    <p class="feature-description">Test your knowledge on <span id="quizTopicName">this topic</span>.</p>
+                                </div>
+                            </button>
+                            <button class="btn btn-premium-feature">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <div>
+                                    <p class="feature-title">Live Interaction with Teachers</p>
+                                    <p class="feature-description">Get your doubts cleared in real-time.</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        © <span id="currentYearSim">2024</span> PhySim. All rights reserved.
+        <script>document.getElementById('currentYearSim').textContent = new Date().getFullYear();</script>
+    </footer>
+    <div id="toastContainer"></div>
+
+
+    <!-- AI Tutor Modal (from ai_tutor_modal.tsx) -->
+    <div id="aiTutorModal" class="modal">
+        <div class="modal-content sm-max-w-600">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-robot"></i> AI Tutor Assistant</h3>
+                <span class="close-btn" data-modal-id="aiTutorModal">×</span>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Need help with the <span id="aiTutorSimulationName" style="font-weight:bold;">simulation</span>? Describe your interaction for a simplified explanation.</p>
+                <form id="aiTutorForm" class="space-y-4">
+                    <div>
+                        <label for="aiInteractionDescription">Describe your interaction</label>
+                        <textarea id="aiInteractionDescription" class="min-h-100" placeholder="e.g., I increased the mass, and the object moved slower."></textarea>
+                    </div>
+                    <div>
+                        <label for="aiUserKnowledgeLevel">Your knowledge level</label>
+                        <select id="aiUserKnowledgeLevel">
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+                    <div id="aiErrorResult" class="alert alert-destructive" style="display: none;"></div>
+                    <div id="aiExplanationResult" class="alert alert-accent" style="display: none;">
+                        <!-- AI Explanation will be injected here -->
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="aiTutorCancelBtn" class="btn btn-outline">Cancel</button>
+                <button type="submit" id="aiSubmitBtn" form="aiTutorForm" class="btn btn-primary">
+                    <i id="aiLoadingSpinner" class="fas fa-spinner"></i> Get Explanation
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Warning Modal (copied from dashboard for consistency, if needed on sim pages directly) -->
+    <div id="mobileWarningModal" class="modal">
+        <div class="modal-content sm-max-w-600">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-mobile-alt"></i> Optimize Your Experience</h3>
+                <span class="close-btn" data-modal-id="mobileWarningModal">×</span>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">PhySim simulations are best viewed on a desktop. Switch to a desktop for a better view and full interactivity.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="dismissMobileWarningBtn" class="btn btn-primary">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="js/app.js"></script>
+</body>
+</html>

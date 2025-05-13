@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhySim - Dashboard</title>
+    <link rel="icon" href="assets/favicon-32x32.png" type="image/png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+</head>
+<body>
+    <header class="app-header">
+       <div class="logo-container">
+            <!-- CORRECTED LOGO IMPLEMENTATION -->
+            <img src="assets/logo.png" alt="PhySim Logo" class="logo-img">
+            <!-- <div class="logo">P</div> REMOVE THIS if using an image logo -->
+        </div>
+        <div class="user-info">
+            <span id="usernameDisplay">User</span>
+            <span class="user-status" id="userStatusBadge">Status</span>
+            <button class="logout-btn" id="logoutButton"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container"> <!-- Changed from page.tsx max-w-7xl mx-auto -->
+            <section class="welcome-banner-dashboard">
+            
+                <h2 class="user-welcome-text">Welcome to Your Physics Dashboard, <span id="welcomeName">User</span>!</h2>
+                <p class="dashboard-subtitle">Explore interactive simulations and deepen your understanding of physics.</p>
+            </section>
+
+            <div id="simulationsContainer">
+                <!-- Simulation cards will be dynamically inserted here -->
+            </div>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        © <span id="currentYear">2024</span> PhySim. All rights reserved.
+        <script>document.getElementById('currentYear').textContent = new Date().getFullYear();</script>
+    </footer>
+    <div id="toastContainer"></div>
+
+
+    <!-- Subscription Modal (from subscription_panel.tsx) -->
+    <div id="subscriptionModal" class="modal">
+        <div class="modal-content sm-max-w-650">
+            <div class="modal-header" style="text-align: center; display: block;">
+                <h3 class="modal-title" style="font-size: 26px; color: #3498db; justify-content: center;">Unlock Your Potential!</h3>
+                <p class="modal-description" style="font-size: 17px;">Choose a plan that best suits your learning journey.</p>
+            </div>
+            <div class="modal-body">
+                <div class="subscription-plans-grid">
+                    <!-- Freemium Plan Card -->
+                    <div class="plan-card" id="freemiumPlanCard">
+                        <div class="card-header">
+                            <h4 class="card-title"><i class="fas fa-star text-yellow-500"></i> Freemium Plan</h4>
+                            <p class="card-description">Get started with basic access.</p>
+                        </div>
+                        <div class="card-content">
+                            <p class="plan-price">PKR 0 <span class="price-term">/ month</span></p>
+                            <ul class="plan-features">
+                                <li><i class="fas fa-check-circle"></i> Access to selective simulation topics</li>
+                                <li><i class="fas fa-check-circle"></i> Basic AI Tutor explanations</li>
+                                <li><i class="fas fa-check-circle"></i> Community support</li>
+                            </ul>
+                            <button id="freemiumPlanBtn" class="btn btn-outline" disabled>Currently Active</button>
+                        </div>
+                    </div>
+                    <!-- Premium Plan Card -->
+                    <div class="plan-card" id="premiumPlanCard">
+                        <div class="card-header">
+                            <h4 class="card-title"><i class="fas fa-bolt text-accent"></i> Premium Plan</h4>
+                            <p class="card-description">Unlock all features and accelerate your learning.</p>
+                        </div>
+                        <div class="card-content">
+                            <p class="plan-price">PKR 2,500 <span class="price-term">/ month</span></p>
+                            <ul class="plan-features">
+                                <li><i class="fas fa-check-circle"></i> Access to ALL simulation topics</li>
+                                <li><i class="fas fa-check-circle"></i> Advanced AI Tutor explanations</li>
+                                <li><i class="fas fa-check-circle"></i> Interactive Quizzes</li>
+                                <li><i class="fas fa-check-circle"></i> Live Interaction with Teachers</li>
+                                <li><i class="fas fa-check-circle"></i> Priority Support</li>
+                            </ul>
+                            <button id="subscriptionModalUpgradeBtn" class="btn btn-upgrade-premium">Upgrade to Premium</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="text-align:center;">
+                <button id="subscriptionModalContinueBtn" class="btn btn-link">Continue Exploring</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Warning Modal -->
+    <div id="mobileWarningModal" class="modal">
+        <div class="modal-content sm-max-w-600">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-mobile-alt"></i> Optimize Your Experience</h3>
+                <span class="close-btn" data-modal-id="mobileWarningModal">×</span>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">PhySim simulations are best viewed on a desktop. Switch to a desktop for a better view and full interactivity.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="dismissMobileWarningBtn" class="btn btn-primary">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="js/app.js"></script>
+    <script>
+        // Small script to adapt subscription modal button based on user role after app.js runs
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                const user = JSON.parse(storedUser);
+                const freemiumBtn = document.getElementById('freemiumPlanBtn');
+                const premiumBtn = document.getElementById('subscriptionModalUpgradeBtn');
+                const freemiumCard = document.getElementById('freemiumPlanCard');
+                const premiumCard = document.getElementById('premiumPlanCard');
+
+                if (user.role === 'freemium') {
+                    freemiumBtn.disabled = true;
+                    freemiumBtn.textContent = 'Currently Active';
+                    premiumBtn.disabled = false;
+                    premiumBtn.textContent = 'Upgrade to Premium';
+                    freemiumCard.classList.add('highlighted');
+                    premiumCard.classList.remove('highlighted');
+                } else if (user.role === 'paid') {
+                    freemiumBtn.disabled = false;
+                    freemiumBtn.textContent = 'Choose Plan'; // Or downgrade, not implemented
+                    premiumBtn.disabled = true;
+                    premiumBtn.textContent = 'Currently Active';
+                    premiumCard.classList.add('highlighted');
+                    freemiumCard.classList.remove('highlighted');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
