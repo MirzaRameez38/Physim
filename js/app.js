@@ -7,9 +7,10 @@ const App = (() => {
         rameez: { password: "123", name: "rameez", role: "paid" }
     };
 
-    // --- OpenRouter API Key ---
-    const OPENROUTER_API_KEY = "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"; // YOUR NEW OPENROUTER KEY
-    // const GEMINI_API_KEY = "AIza..."; // <<<<  REMOVE OR COMMENT OUT THE OLD GEMINI KEY
+    // --- Gemini API Key ---
+    const GEMINI_API_KEY = "AIzaSyAOrxgQY1KnKdo3RQhBPJ3qiu5kAAjR__8"; // YOUR API KEY
+    // const OPENROUTER_API_KEY = "sk-or-v1-..."; // <<<<  REMOVE OR COMMENT OUT OPENROUTER KEY
+
 
 
     // --- Application Data (Simulating lib/data from TSX) ---
@@ -505,59 +506,75 @@ const App = (() => {
 
         // Construct the messages array for OpenRouter
         // The system prompt helps set the context for the AI
-        const messages = [
-            {
-                "role": "system",
-                "content": `You are a helpful and friendly physics tutor. The user is exploring the "${currentSimulationNameForAI}" simulation. Their current knowledge level is "${userKnowledgeLevel}". Please provide a clear, concise, and easy-to-understand explanation based on their query. Tailor the depth of your explanation to their stated knowledge level.`
+           const systemInstruction = `You are a helpful and friendly physics tutor. The user is exploring the "${currentSimulationNameForAI}" simulation. Their current knowledge level is "${userKnowledgeLevel}". Please provide a clear, concise, and easy-to-understand explanation based on their query. Tailor the depth of your explanation to their stated knowledge level. Focus on explaining the physics concepts relevant to their query.`;
+
+        // Construct the request body for Gemini API
+        const requestBody = {
+            contents: [
+                {
+                    role: "user", // For single-turn, the first message is often 'user'
+                    parts: [
+                        { "text": systemInstruction + "\n\nUser's query: " + interactionDescription }
+                    ]
+                }
+            ],
+            generationConfig: {
+                // "temperature": 0.7, // Optional: Adjust creativity (0.0 to 1.0)
+                // "maxOutputTokens": 350, // Optional: Limit response length
+                // "topK": 40,             // Optional
+                // "topP": 0.95,           // Optional
             },
-            {
-                "role": "user",
-                "content": interactionDescription
-            }
-        ];
+            safetySettings: [ // Optional but recommended
+                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
+            ]
+        };
+
+          // --- Using Gemini API directly ---
+        // Model: gemini-1.5-flash-latest is a good choice for speed and capability.
+        // If "latest" tag causes issues, try a specific version like "gemini-1.5-flash-001"
+        // or simply "gemini-1.5-flash" if available in your project.
+        const modelToUse = "gemini-1.5-flash-latest"; // Or "gemini-1.5-flash"
 
         try {
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: "POST",
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${GEMINI_API_KEY}`, {
+                method: 'POST',
                 headers: {
-                    "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                    // "HTTP-Referer": "http://localhost", // Optional: Replace <YOUR_SITE_URL> or remove if not needed for local dev
-                    // "X-Title": "PhySim", // Optional: Replace <YOUR_SITE_NAME> or remove
-                    "Content-Type": "application/json"
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    "model": "deepseek/deepseek-coder-r1:free", // Using the specific free model you mentioned
-                                                              // Double check this model ID on OpenRouter if issues persist
-                    "messages": messages
-                    // You can add other parameters like temperature, max_tokens here if needed
-                    // "temperature": 0.7,
-                    // "max_tokens": 350,
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error("OpenRouter API Error Data:", errorData); // Log the full error
-                let detailedErrorMessage = errorData.error?.message || `OpenRouter API request failed with status ${response.status}`;
-                if (errorData.error?.type) {
-                    detailedErrorMessage += ` (Type: ${errorData.error.type})`;
+                console.error("Gemini API Error Data:", errorData);
+                let detailedErrorMessage = errorData.error?.message || `Gemini API request failed with status ${response.status}`;
+                if (errorData.error?.details) {
+                    detailedErrorMessage += ` Details: ${JSON.stringify(errorData.error.details)}`;
                 }
                 throw new Error(detailedErrorMessage);
             }
 
             const data = await response.json();
-            // Standard OpenRouter chat completion response structure
-            const AITextExplanation = data.choices?.[0]?.message?.content;
+
+            // Standard Gemini API response structure for generateContent
+            const AITextExplanation = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
             if (AITextExplanation) {
                 explanationDiv.innerHTML = `<h4 class="alert-title">AI Explanation</h4><div class="prose">${AITextExplanation.replace(/\n/g, '<br />')}</div>`;
                 explanationDiv.style.display = 'block';
             } else {
-                console.error("No text content in OpenRouter AI response:", data); // Log if choices[0].message.content is missing
-                throw new Error("No explanation received from AI or response format was unexpected.");
+                console.error("No text content in Gemini AI response:", data);
+                if (data.promptFeedback && data.promptFeedback.blockReason) {
+                     throw new Error(`Content blocked by safety filters. Reason: ${data.promptFeedback.blockReason}. Details: ${JSON.stringify(data.promptFeedback.safetyRatings)}`);
+                } else {
+                    throw new Error("No explanation received from AI or response format was unexpected.");
+                }
             }
         } catch (err) {
-            errorDiv.textContent = `AI Tutor Error: ${err.message}. Please check the console for more details. Ensure your OpenRouter API key is correct and the model is available.`;
+            errorDiv.textContent = `AI Tutor Error: ${err.message}. Please check the console for more details. Ensure your API key is correct, the Generative Language API is enabled, and the model "${modelToUse}" is available for your project.`;
             errorDiv.style.display = 'block';
             console.error("Full AI Tutor Error Object:", err);
         } finally {

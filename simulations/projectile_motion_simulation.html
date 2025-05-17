@@ -21,31 +21,56 @@
       width: 100%;
       height: 100%;
     }
-    
-    #info-panel {
+
+    #toggle-info-panel-button {
       position: absolute;
       top: 10px;
       left: 10px;
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 200; 
+      font-size: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    #toggle-info-panel-button:hover {
+      background: #3367d6;
+    }
+    
+    #info-panel {
+      position: absolute;
+      top: 50px; /* Below the toggle button */
+      left: 10px;
+      right: 10px; /* Panel will span between these on small screens */
+      width: auto;   /* Let left/right/max-width determine actual width */
       background: rgba(255, 255, 255, 0.9);
       padding: 15px;
       border-radius: 10px;
-      max-width: 400px;
-      max-height: 80vh;
+      max-width: 320px; /* Default max for small screens */
+      max-height: calc(100vh - 70px); /* Adjusted for top offset and some bottom margin */
       overflow-y: auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
       z-index: 100;
+      box-sizing: border-box;
     }
     
     #data-display {
       position: absolute;
       bottom: 10px;
       left: 10px;
+      right: 10px; /* Similar to info-panel for small screens */
+      width: auto;   /* Similar to info-panel */
       background: rgba(255, 255, 255, 0.9);
       padding: 10px;
       border-radius: 10px;
       font-size: 14px;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
       z-index: 100;
+      box-sizing: border-box;
+      max-width: 320px; /* Default max for small screens */
     }
     
     button {
@@ -79,7 +104,7 @@
       padding: 10px 16px;
       transition: 0.3s;
       color: #333;
-      margin: 0;
+      margin: 0; /* Reset margin for tab buttons */
     }
     
     .tab button:hover {
@@ -107,6 +132,7 @@
       border-radius: 3px;
       border-left: 3px solid #4285f4;
       margin: 5px 0;
+      word-break: break-word; /* Prevent overflow */
     }
     
     h2 {
@@ -115,18 +141,21 @@
       margin-bottom: 10px;
       border-bottom: 1px solid #eee;
       padding-bottom: 5px;
+      font-size: 1.5em;
     }
     
     h3 {
       color: #5f6368;
       margin-top: 12px;
       margin-bottom: 8px;
+      font-size: 1.2em;
     }
     
     .grid-data {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: auto 1fr; /* Label takes auto width, value takes rest */
       gap: 5px;
+      align-items: center;
     }
     
     .data-label {
@@ -140,9 +169,72 @@
       border-radius: 5px;
       border: 1px solid #d0e3ff;
     }
+
+    /* Responsive adjustments */
+    @media (min-width: 480px) { /* Larger phones, small tablets portrait */
+      #info-panel, #data-display {
+        max-width: 360px;
+      }
+    }
+
+    @media (min-width: 768px) { /* Tablets landscape and desktops */
+      #info-panel, #data-display {
+        right: auto; /* Let it be defined by left and max-width */
+        max-width: 400px;
+      }
+    }
+
+    @media (max-width: 380px) { /* Very small screens */
+      #toggle-info-panel-button {
+        padding: 6px 10px;
+        font-size: 13px;
+      }
+      #info-panel {
+        padding: 10px;
+        top: 40px; /* Adjusted for smaller toggle button */
+        max-height: calc(100vh - 60px); /* Adjusted max-height */
+        font-size: 13px; 
+      }
+      #info-panel h2 {
+        font-size: 1.3em;
+        margin-top: 10px;
+        margin-bottom: 8px;
+      }
+      #info-panel h3 {
+        font-size: 1.1em;
+        margin-top: 8px;
+        margin-bottom: 6px;
+      }
+      #info-panel p, #info-panel li {
+        font-size: 0.95em;
+      }
+      .tab button {
+        padding: 8px 10px;
+        font-size: 12px; /* Smaller tab text */
+      }
+      #data-display .grid-data {
+        grid-template-columns: 1fr; /* Stack data items */
+      }
+      #data-display {
+        font-size: 12px;
+        padding: 8px;
+      }
+      .formula {
+        font-size: 12px;
+        padding: 4px;
+      }
+      button { /* General buttons in panel */
+        padding: 6px 10px;
+        font-size: 13px;
+        margin: 3px;
+      }
+    }
+
   </style>
 </head>
 <body>
+
+<button id="toggle-info-panel-button">Hide Panel</button>
 
 <div id="canvas-container"></div>
 
@@ -394,11 +486,20 @@
     const angleRad = params.verticalAngle * Math.PI / 180;
     
     // Time of flight (ignoring horizontal angle for simplicity)
-    const timeOfFlight = (2 * params.initialVelocity * Math.sin(angleRad)) / params.gravity;
+    // This calculation is for launch from y=0. For launchHeight > 0, it's more complex.
+    // For simplicity, keeping current calculation as an approximation.
+    // Accurate time of flight from y=h0: (v0y + sqrt(v0y^2 + 2*g*h0)) / g
+    const v0y = params.initialVelocity * Math.sin(angleRad);
+    let timeOfFlight;
+    if (params.launchHeight === 0) {
+        timeOfFlight = (2 * v0y) / params.gravity;
+    } else {
+        timeOfFlight = (v0y + Math.sqrt(v0y*v0y + 2*params.gravity*params.launchHeight)) / params.gravity;
+    }
     
     // Maximum height
     const maxHeight = params.launchHeight + 
-                      (params.initialVelocity * Math.sin(angleRad))**2 / (2 * params.gravity);
+                      (v0y**2) / (2 * params.gravity);
     
     // Range (horizontal distance)
     const range = params.initialVelocity * Math.cos(angleRad) * timeOfFlight;
@@ -576,15 +677,16 @@
     const context = canvas.getContext('2d');
     context.fillStyle = 'rgba(0, 0, 0, 0)';
     context.fillRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = 'white';
-    context.font = '24px Arial';
+    context.fillStyle = 'white'; // Changed to white for better visibility against yellow marker
+    context.font = '20px Arial'; // Slightly smaller font
     context.textAlign = 'center';
-    context.fillText(time.toFixed(1) + 's', canvas.width / 2, 24);
+    context.textBaseline = 'middle';
+    context.fillText(time.toFixed(1) + 's', canvas.width / 2, canvas.height / 2);
     
     const texture = new THREE.CanvasTexture(canvas);
     const labelMaterial = new THREE.SpriteMaterial({ map: texture });
     const label = new THREE.Sprite(labelMaterial);
-    label.position.set(0, 0.2, 0);
+    label.position.set(0, 0.25, 0); // Adjusted y-offset for label
     label.scale.set(1, 0.5, 1);
     marker.add(label);
     
@@ -603,7 +705,7 @@
     // Calculate initial velocity components
     const vHorizontal = params.initialVelocity * Math.cos(verticalAngleRad);
     const vx = vHorizontal * Math.cos(horizontalAngleRad);
-    const vz = vHorizontal * Math.sin(horizontalAngleRad);
+    const vz = vHorizontal * Math.sin(horizontalAngleRad); // Positive Z if angle > 0
     const vy = params.initialVelocity * Math.sin(verticalAngleRad);
     
     // Set initial state
@@ -632,20 +734,15 @@
     document.getElementById('theo-height-value').textContent = theoretical.maxHeight.toFixed(2);
     document.getElementById('theo-range-value').textContent = theoretical.range.toFixed(2);
     
-    // Show or hide theoretical values based on user preference
     document.getElementById('theoretical-info').style.display = 
       params.showTheoreticalValues ? 'block' : 'none';
   }
   
   // Predict trajectory for visualization
   function predictTrajectory() {
-    // Clear old prediction
     clearTimeMarkers();
     
-    // Initialize points array with starting position
     const points = [state.position.clone()];
-    
-    // Variables for simulation
     const tempPos = state.position.clone();
     const tempVel = state.velocity.clone();
     const tempAcc = new THREE.Vector3();
@@ -654,66 +751,69 @@
     let nextMarkerTime = params.timeMarkerInterval;
     let inFlight = true;
     
-    // Run simulation until projectile hits ground or exceeds limits
     while (inFlight && tempTime < 60 && points.length < 10000) {
-      // Calculate air resistance
       if (params.airResistance > 0) {
         const drag = tempVel.clone().normalize();
         const velMagSq = tempVel.lengthSq();
         drag.multiplyScalar(-params.airResistance * velMagSq);
-        
-        // Total acceleration = gravity + drag/mass
         tempAcc.set(drag.x, -params.gravity + drag.y, drag.z);
       } else {
         tempAcc.set(0, -params.gravity, 0);
       }
       
-      // Update velocity (v = v0 + a*t)
       tempVel.x += tempAcc.x * params.timeStep;
       tempVel.y += tempAcc.y * params.timeStep;
       tempVel.z += tempAcc.z * params.timeStep;
       
-      // Update position (p = p0 + v*t + 0.5*a*t^2)
       tempPos.x += tempVel.x * params.timeStep + 0.5 * tempAcc.x * params.timeStep * params.timeStep;
       tempPos.y += tempVel.y * params.timeStep + 0.5 * tempAcc.y * params.timeStep * params.timeStep;
       tempPos.z += tempVel.z * params.timeStep + 0.5 * tempAcc.z * params.timeStep * params.timeStep;
       
-      // Add point to trajectory
       points.push(tempPos.clone());
-      
-      // Update time
       tempTime += params.timeStep;
       
-      // Check if it's time to add a marker
-      if (params.showTimeMarkers && tempTime >= nextMarkerTime) {
+      if (params.showTimeMarkers && tempTime >= nextMarkerTime && tempPos.y > 0) {
         createTimeMarker(tempPos.clone(), nextMarkerTime);
         nextMarkerTime += params.timeMarkerInterval;
       }
       
-      // Check if projectile has hit the ground
       if (tempPos.y <= 0) {
-        // Interpolate to find exact ground intersection
-        const tToGround = -tempPos.y / tempVel.y;
+        const prevPos = points[points.length - 2]; // Position before hitting ground
+        const prevVelY = tempVel.y - tempAcc.y * params.timeStep; // Velocity at start of this step, approximately
+
+        let tToGround = 0;
+        if (prevVelY !== 0) { // Avoid division by zero if somehow y velocity becomes zero at ground
+            tToGround = (0 - prevPos.y) / prevVelY; // Linear interpolation based on velocity component
+        }
+        
+        // If tToGround is not within the current time step, use simpler method or clamp
+        if (tToGround < 0 || tToGround > params.timeStep) {
+            tToGround = params.timeStep * (-prevPos.y / (tempPos.y - prevPos.y)); // Ratio interpolation
+        }
+        if (isNaN(tToGround) || !isFinite(tToGround)) tToGround = 0; // Fallback
+
+
         const landingPoint = new THREE.Vector3(
-          tempPos.x - tempVel.x * tToGround,
+          prevPos.x + (tempVel.x - 0.5 * tempAcc.x * params.timeStep) * tToGround, // Use average velocity for this small step
           0,
-          tempPos.z - tempVel.z * tToGround
+          prevPos.z + (tempVel.z - 0.5 * tempAcc.z * params.timeStep) * tToGround
         );
-        points.push(landingPoint);
+        points[points.length - 1] = landingPoint; // Replace last point with interpolated one
         inFlight = false;
         
-        // Save landing information
         state.landingPoint.copy(landingPoint);
-        state.landingTime = tempTime - tToGround;
+        state.landingTime = (tempTime - params.timeStep) + tToGround;
         
-        // Create special marker for landing point
-        const landingMarker = createTimeMarker(landingPoint, state.landingTime);
-        landingMarker.scale.set(2, 2, 2);
-        landingMarker.material.color.set(0xff0000);
+        if (params.showTimeMarkers) {
+            const landingMarker = createTimeMarker(landingPoint, state.landingTime);
+            if(landingMarker) { // Check if marker was created
+                landingMarker.scale.set(1.5, 1.5, 1.5); // Slightly larger
+                landingMarker.material.color.set(0xff0000); // Red for landing
+            }
+        }
       }
     }
     
-    // Update trajectory line
     trajectory.geometry.dispose();
     trajectory.geometry = new THREE.BufferGeometry().setFromPoints(points);
     trajectory.visible = params.showTrajectory;
@@ -722,26 +822,25 @@
   // Clear all time markers
   function clearTimeMarkers() {
     for (const marker of timeMarkers) {
+      if (marker.children.length > 0) { // Remove label sprite
+        marker.remove(marker.children[0]);
+      }
       scene.remove(marker);
+      marker.geometry.dispose();
+      marker.material.dispose();
     }
     timeMarkers = [];
   }
   
   // Update physics
   function updatePhysics(deltaTime) {
-    // Scale by simulation speed
     const dt = deltaTime * params.simulationSpeed;
-    
-    // Update time
     state.time += dt;
     
-    // Calculate air resistance (proportional to v^2)
     if (params.airResistance > 0) {
       const drag = state.velocity.clone().normalize();
       const velMagSq = state.velocity.lengthSq();
       drag.multiplyScalar(-params.airResistance * velMagSq);
-      
-      // Total acceleration = gravity + drag/mass
       state.acceleration.set(
         drag.x,
         -params.gravity + drag.y,
@@ -751,64 +850,38 @@
       state.acceleration.set(0, -params.gravity, 0);
     }
     
-    // Update velocity (v = v0 + a*t)
     state.velocity.x += state.acceleration.x * dt;
     state.velocity.y += state.acceleration.y * dt;
     state.velocity.z += state.acceleration.z * dt;
     
-    // Update position (p = p0 + v*t + 0.5*a*t^2)
     state.position.x += state.velocity.x * dt + 0.5 * state.acceleration.x * dt * dt;
     state.position.y += state.velocity.y * dt + 0.5 * state.acceleration.y * dt * dt;
     state.position.z += state.velocity.z * dt + 0.5 * state.acceleration.z * dt * dt;
     
-    // Track maximum height
     if (state.position.y > state.maxHeight) {
       state.maxHeight = state.position.y;
     }
     
-    // Track maximum range (horizontal distance from origin)
     const horizontalRange = Math.sqrt(state.position.x * state.position.x + state.position.z * state.position.z);
     if (horizontalRange > state.maxRange) {
       state.maxRange = horizontalRange;
     }
     
-    // Check if projectile has hit the ground
     if (state.position.y <= 0) {
       state.position.y = 0;
       state.isRunning = false;
-      
-      // Log landing statistics
       if (params.debugInfo) {
-        console.log("Projectile landed!");
-        console.log("Time of flight:", state.time.toFixed(2), "seconds");
-        console.log("Range:", state.maxRange.toFixed(2), "meters");
-        console.log("Maximum height:", state.maxHeight.toFixed(2), "meters");
+        console.log("Projectile landed! Time:", state.time.toFixed(2), "s, Range:", state.maxRange.toFixed(2), "m, Max Height:", state.maxHeight.toFixed(2), "m");
       }
     }
     
-    // Update projectile position
     projectile.position.copy(state.position);
     
-    // Update vector arrows
     if (params.showVectors) {
-      // Scale vectors for visibility
       const velocityScale = 0.3;
       const accelerationScale = 0.3;
-      
-      updateArrow(
-        velocityArrow,
-        state.position,
-        state.velocity.clone().normalize(),
-        state.velocity.length() * velocityScale
-      );
-      
-      updateArrow(
-        accelerationArrow,
-        state.position,
-        state.acceleration.clone().normalize(),
-        state.acceleration.length() * accelerationScale
-      );
-      
+      updateArrow(velocityArrow, state.position, state.velocity.clone().normalize(), state.velocity.length() * velocityScale);
+      updateArrow(accelerationArrow, state.position, state.acceleration.clone().normalize(), state.acceleration.length() * accelerationScale);
       velocityArrow.visible = true;
       accelerationArrow.visible = true;
     } else {
@@ -816,7 +889,6 @@
       accelerationArrow.visible = false;
     }
     
-    // Update data display
     updateDataDisplay();
   }
   
@@ -837,16 +909,10 @@
   // Animation loop
   function animate() {
     requestAnimationFrame(animate);
-    
-    // Update orbit controls
     controls.update();
-    
-    // Update physics if simulation is running
     if (state.isRunning) {
       updatePhysics(params.timeStep);
     }
-    
-    // Render scene
     renderer.render(scene, camera);
   }
   
@@ -860,43 +926,34 @@
   // Setup GUI controls
   function setupGUI() {
     const gui = new dat.GUI();
-    gui.width = 300;
+    gui.width = 280; // Adjusted width slightly
     
-    // Launch parameters folder
     const launchFolder = gui.addFolder('Launch Parameters');
-    launchFolder.add(params, 'initialVelocity', 1, 50).name('Initial Velocity (m/s)').onChange(resetSimulation);
-    launchFolder.add(params, 'horizontalAngle', 0, 360).name('Horizontal Angle (°)').onChange(resetSimulation);
-    launchFolder.add(params, 'verticalAngle', 0, 90).name('Vertical Angle (°)').onChange(resetSimulation);
-    launchFolder.add(params, 'launchHeight', 0, 10).name('Launch Height (m)').onChange(resetSimulation);
-    launchFolder.open();
+    launchFolder.add(params, 'initialVelocity', 1, 50).name('Velocity (m/s)').onChange(resetSimulation);
+    launchFolder.add(params, 'horizontalAngle', 0, 360).name('H. Angle (°)').onChange(resetSimulation);
+    launchFolder.add(params, 'verticalAngle', 0, 90).name('V. Angle (°)').onChange(resetSimulation);
+    launchFolder.add(params, 'launchHeight', 0, 10).name('Height (m)').onChange(resetSimulation);
+    // launchFolder.open(); // Keep closed by default for more screen space
     
-    // Environment parameters folder
     const envFolder = gui.addFolder('Environment');
     envFolder.add(params, 'gravity', 0.1, 30).name('Gravity (m/s²)').onChange(resetSimulation);
-    envFolder.add(params, 'airResistance', 0, 0.1).name('Air Resistance').onChange(resetSimulation);
-    envFolder.open();
+    envFolder.add(params, 'airResistance', 0, 0.1, 0.001).name('Air Resist.').onChange(resetSimulation);
     
-    // Visualization folder
     const visFolder = gui.addFolder('Visualization');
-    visFolder.add(params, 'showTrajectory').name('Show Trajectory').onChange(function(value) {
-      trajectory.visible = value;
+    visFolder.add(params, 'showTrajectory').name('Trajectory').onChange(v => trajectory.visible = v);
+    visFolder.add(params, 'showVectors').name('Vectors').onChange(v => {
+      if (!v) { velocityArrow.visible = false; accelerationArrow.visible = false; }
     });
-    visFolder.add(params, 'showVectors').name('Show Vectors').onChange(function(value) {
-      velocityArrow.visible = value && state.isRunning;
-      accelerationArrow.visible = value && state.isRunning;
-    });
-    visFolder.add(params, 'showTimeMarkers').name('Show Time Markers').onChange(resetSimulation);
-    visFolder.add(params, 'timeMarkerInterval', 0.1, 1).name('Marker Interval (s)').onChange(resetSimulation);
-    visFolder.add(params, 'showTheoreticalValues').name('Show Theoretical').onChange(updateTheoreticalValues);
-    visFolder.open();
+    visFolder.add(params, 'showTimeMarkers').name('Time Markers').onChange(resetSimulation);
+    visFolder.add(params, 'timeMarkerInterval', 0.1, 1).name('Marker Int. (s)').onChange(resetSimulation);
+    visFolder.add(params, 'showTheoreticalValues').name('Theoretical').onChange(updateTheoreticalValues);
     
-    // Simulation controls folder
     const simFolder = gui.addFolder('Simulation');
-    simFolder.add(params, 'simulationSpeed', 0.1, 5).name('Simulation Speed');
-    simFolder.add({ start: startSimulation }, 'start').name('Start Simulation');
-    simFolder.add({ pause: pauseSimulation }, 'pause').name('Pause Simulation');
-    simFolder.add({ reset: resetSimulation }, 'reset').name('Reset Simulation');
-    simFolder.open();
+    simFolder.add(params, 'simulationSpeed', 0.1, 5).name('Sim Speed');
+    simFolder.add({ start: startSimulation }, 'start').name('Start');
+    simFolder.add({ pause: pauseSimulation }, 'pause').name('Pause');
+    simFolder.add({ reset: resetSimulation }, 'reset').name('Reset');
+    simFolder.open(); // Keep this open
     
     return gui;
   }
@@ -906,18 +963,12 @@
     if (!state.hasLaunched) {
       state.hasLaunched = true;
       state.isRunning = true;
-      
-      // Update tab display to show controls
-      document.querySelectorAll('.tabcontent').forEach(tab => {
-        tab.style.display = 'none';
-      });
-      document.getElementById('Controls').style.display = 'block';
-      
-      // Update tab buttons
-      document.querySelectorAll('.tablinks').forEach(button => {
-        button.classList.remove('active');
-      });
-      document.querySelector('.tablinks[onclick="openTab(event, \'Controls\')"]').classList.add('active');
+      // If Introduction tab is active, switch to Controls for better UX on first launch
+      const introTab = document.getElementById('Introduction');
+      const controlsTabButton = document.querySelector('.tablinks[onclick="openTab(event, \'Controls\')"]');
+      if (introTab.style.display === 'block' && controlsTabButton) {
+        controlsTabButton.click();
+      }
     } else if (!state.isRunning) {
       state.isRunning = true;
     }
@@ -934,14 +985,9 @@
   function resetSimulation() {
     state.hasLaunched = false;
     state.isRunning = false;
-    
     calculateInitialConditions();
-    
-    // Hide vector arrows until simulation starts
     velocityArrow.visible = false;
     accelerationArrow.visible = false;
-    
-    // Reset data display
     updateDataDisplay();
   }
   
@@ -951,18 +997,43 @@
     for (let i = 0; i < tabcontent.length; i++) {
       tabcontent[i].style.display = "none";
     }
-    
     const tablinks = document.getElementsByClassName("tablinks");
     for (let i = 0; i < tablinks.length; i++) {
       tablinks[i].className = tablinks[i].className.replace(" active", "");
     }
-    
     document.getElementById(tabName).style.display = "block";
     evt.currentTarget.className += " active";
   }
+
+  // Info Panel Toggle Functionality
+  function setupInfoPanelToggle() {
+    const toggleButton = document.getElementById('toggle-info-panel-button');
+    const infoPanel = document.getElementById('info-panel');
+
+    if (!infoPanel || !toggleButton) {
+        console.error("Info panel or toggle button not found for toggle setup.");
+        return;
+    }
+    
+    let isInfoPanelVisible = (window.getComputedStyle(infoPanel).display !== 'none');
+
+    function updateButtonText() {
+        toggleButton.textContent = isInfoPanelVisible ? 'Hide Panel' : 'Show Panel';
+    }
+    updateButtonText(); // Set initial text
+
+    toggleButton.addEventListener('click', () => {
+        isInfoPanelVisible = !isInfoPanelVisible;
+        infoPanel.style.display = isInfoPanelVisible ? 'block' : 'none';
+        updateButtonText();
+    });
+  }
   
   // Initialize when window loads
-  window.onload = init;
+  window.onload = () => {
+    init();
+    setupInfoPanelToggle(); // Setup the toggle for the custom info panel
+  };
 </script>
 
 </body>

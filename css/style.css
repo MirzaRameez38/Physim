@@ -114,7 +114,7 @@ h1, h2, h3 {
 }
 
 .welcome-banner-dashboard { /* From your new JS/HTML */
-    background-color: #ffffff;
+    background-color: #ffffff; /* White background */
     padding: 30px 35px; /* More padding */
     border-radius: 12px; /* More rounded */
     margin-bottom: 35px; /* More spacing */
@@ -368,55 +368,95 @@ h1, h2, h3 {
 
 /* Alert for AI Tutor on Sim Page */
 .alert.alert-accent {
-    background-color: #f0f5ff; /* A very light, almost neutral blue */
-    border: 1px solid #d6e4ff; /* Soft blue border */
-    margin-top: 30px; /* More spacing */
-    padding: 20px; /* More internal padding for the alert box */
+    background-color: #f0f5ff;
+    border: 1px solid #d6e4ff;
+    margin-top: 30px;
+    padding: 20px;
     border-radius: 8px;
+    display: flex; /* Make the main alert box a flex container */
+    align-items: flex-start; /* Align icon and text block to the top */
+    padding-right: 150px; /* Add enough padding on the right to make space for the absolute button */
+                           /* Adjust this value based on your button's width + desired spacing */
+    position: relative; /* Important: Establishes positioning context for the button */
 }
 .alert.alert-accent i.fas.fa-robot { /* Specifically targeting the robot icon */
     color: #3b82f6; /* Brighter, friendly blue */
     font-size: 22px; /* Slightly larger icon for the alert */
-    margin-right: 12px;
+    margin-right: 15px; /* Increased margin for better spacing */
+    flex-shrink: 0; /* Prevent icon from shrinking */
 }
+
+.alert.alert-accent .alert-content-wrapper { /* NEW class */
+    flex-grow: 1; /* Allow this wrapper to take remaining space */
+    display: flex;
+    flex-direction: column; /* Stack title and description by default */
+}
+
 .alert.alert-accent .alert-title {
     color: #1e3a8a; /* Deeper blue for title, good contrast */
     font-weight: 600;
     font-size: 17px; /* Slightly larger title */
-    margin-bottom: 4px;
+    margin-bottom: 8px;
 }
-.alert.alert-accent .alert-description span { /* The text part */
-    color: #374151; /* Dark gray for good readability */
-    font-size: 14.5px;
+.alert.alert-accent .alert-description {
+    /* This div now contains both the text span and the button */
+    display: flex; /* Make this a flex container */
+    justify-content: space-between; /* Push text left, button right */
+    align-items: center; /* Vertically align text and button */
+    width: 100%; /* Ensure it takes full width of its parent (.alert-content-wrapper) */
 }
 
-/* NEW STYLES FOR THE AI TUTOR BUTTON */
-.alert .btn-ai-tutor {
-    background-color: #3b82f6; /* Brighter, friendly blue - primary action color */
+
+/* STYLES FOR THE AI TUTOR BUTTON (previously .alert .btn-ai-tutor) */
+/* Button styles remain the same as the "attractive" version previously provided */
+.btn-ai-tutor {
+    background-color: #3b82f6;
     color: white;
-    padding: 10px 20px; /* More comfortable padding */
+    padding: 10px 20px;
     font-size: 14px;
-    font-weight: 500; /* Medium weight for clarity */
+    font-weight: 500;
     border-radius: 6px;
-    border: none; /* No border for a cleaner look */
+    border: none;
     transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-    display: inline-flex; /* To align icon and text */
+    display: inline-flex;
     align-items: center;
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); /* Subtle shadow matching the blue */
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    flex-shrink: 0; /* Prevent button from shrinking */
+    /* margin-top will be handled by .flex-responsive or default flow */
+    position: absolute;
+    top: 50%; /* Vertically center relative to the .alert.alert-accent */
+    right: 20px; /* Distance from the right edge of .alert.alert-accent */
+    transform: translateY(-50%); /* Fine-tune vertical centering */
+    margin-top: 0; /* Override any default top margin */
 }
-.alert .btn-ai-tutor i.fas.fa-comment-dots { /* Icon inside the button */
-    margin-right: 15px;
+.btn-ai-tutor i.fas.fa-comment-dots { /* Icon inside the button */
+    margin-right: 8px; /* Space between icon and text */
     font-size: 15px; /* Slightly larger icon in button */
-    order:-1;
+    /* order:-1; REMOVE THIS if you want icon before text */
 }
-.alert .btn-ai-tutor:hover {
+.btn-ai-tutor:hover {
     background-color: #2563eb; /* Darker shade of blue on hover */
-    transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25);
 }
-.alert .btn-ai-tutor:active {
+.btn-ai-tutor:active {
     transform: translateY(0px);
     box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+/* Responsive stacking for smaller screens */
+@media (max-width: 767px) { /* Adjust breakpoint if needed */
+    .alert.alert-accent .alert-description {
+        flex-direction: column; /* Stack text and button */
+        align-items: flex-start; /* Align items to the start when stacked */
+    }
+    .alert.alert-accent .alert-description span {
+        margin-right: 0;
+        margin-bottom: 10px; /* Space below text when stacked */
+    }
+    .btn-ai-tutor {
+        width: auto; /* Allow button to size to its content when stacked */
+        /* Or width: 100%; if you want it full width on mobile */
+    }
 }
 
 /* Premium Tools Card on Sim Page */
